@@ -35,7 +35,7 @@ src/
   components/        Segmented, Switch, Sheet, ActionSheet, Toast
   styles/app.css     the whole design system (tokens at the top)
 tests/               Vitest; fake-indexeddb for storage
-public/              icons (drop with a fade line through it)
+public/              icons: plain white teardrop on black, same shape as the top-bar brand mark
 ```
 
 Rules of the road:
