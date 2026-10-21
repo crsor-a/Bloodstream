@@ -38,7 +38,7 @@ export function DataCard() {
   };
 
   return (
-    <section class="dsec reveal" style={{ '--d': 9 } as any} aria-labelledby="hData">
+    <section class="dsec reveal" style={{ '--d': 10 } as any} aria-labelledby="hData">
       <div class="sec-head"><h2 id="hData">Your data</h2></div>
       <div class="card">
         <div class="data-meta">

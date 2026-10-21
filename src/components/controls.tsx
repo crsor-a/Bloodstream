@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { actionOpen, sheetOpen, toast } from '../state';
+import { actionOpen, calendarOpen, sheetOpen, toast } from '../state';
 
 export interface SegOption<T extends string> { v: T; label: ComponentChildren; sub?: string }
 
@@ -33,7 +33,7 @@ const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced
 export const prefersReducedMotion = () => reduce;
 
 /** Keeps an overlay mounted while its close animation plays. */
-function useOverlay(open: boolean) {
+export function useOverlay(open: boolean) {
   const [mounted, setMounted] = useState(open);
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -98,7 +98,7 @@ export function Toast() {
 /** Escape closes whichever overlay is open. */
 export function useEscape() {
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (sheetOpen.value) sheetOpen.value = false; else if (actionOpen.value) actionOpen.value = false; };
+    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (sheetOpen.value) sheetOpen.value = false; else if (actionOpen.value) actionOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, []);

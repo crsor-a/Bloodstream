@@ -16,7 +16,7 @@ export function Effectivity() {
   const c: EffCtx = { E: reg.effectAt(ts), L: reg.levelAt(ts), I: reg.sleepAt(ts), rising: reg.risingAt(ts), afterPeak: ts >= kt.peakAt };
 
   return (
-    <section class="dsec reveal" style={{ '--d': 8 } as any} aria-labelledby="hEff">
+    <section class="dsec reveal" style={{ '--d': 9 } as any} aria-labelledby="hEff">
       <div class="sec-head"><h2 id="hEff">Effectivity</h2></div>
       <div class="eff-ctrl">
         <Segmented label="When" value={mode} onChange={m => { setMode(m); if (m === 'custom') setCustom(toHHMM(new Date(t + HOUR))); }}

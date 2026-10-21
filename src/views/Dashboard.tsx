@@ -12,6 +12,8 @@ import { Curve } from './Curve';
 import { Sleep } from './Sleep';
 import { Effectivity } from './Effectivity';
 import { DataCard } from './DataCard';
+import { CalendarCard, CalendarViewer } from './Calendar';
+import { Changelog } from './Changelog';
 
 export function Disclaimer(p: { onboarding?: boolean }) {
   return <p class={p.onboarding ? 'ob-disclaimer' : 'disclaimer'}>Bloodstream is not a replacement for doctor advice and information shown may be inaccurate. Always double-check and never use this website to plan doses not approved by a healthcare professional.</p>;
@@ -151,7 +153,7 @@ function Stats() {
 
 function Method() {
   return (
-    <details class="method reveal" style={{ '--d': 10 } as any}>
+    <details class="method reveal" style={{ '--d': 11 } as any}>
       <summary>How Bloodstream estimates this</summary>
       <ul>
         <li>Both forms are a 3:1 mix of d- and l-amphetamine. Each is modeled on its own, using the elimination half-lives on the FDA label for your age group. Adults: about 10 hours for d and 13 for l. Teens: 11 and 13 to 14. Kids 6 to 12: 9 and 11.</li>
@@ -184,12 +186,15 @@ export function Dashboard() {
       <Hero />
       <Stats />
       <DoseList />
+      <CalendarCard />
       <Curve />
       <Sleep />
       <Effectivity />
       <DataCard />
       <Method />
       <Disclaimer />
+      <Changelog />
+      <CalendarViewer />
 
       <Sheet open={sheetOpen.value} onClose={() => { sheetOpen.value = false; }} title="New dose">
         <h2 class="sheet-intro">Add another dose</h2>

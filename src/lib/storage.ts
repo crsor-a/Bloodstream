@@ -56,6 +56,7 @@ export function sanitizeSettings(raw: any): Settings {
   if (typeof raw?.sleep === 'string' && /^\d\d:\d\d$/.test(raw.sleep)) s.sleep = raw.sleep;
   if (Number(raw?.resetAt) > 0) s.resetAt = Number(raw.resetAt);
   s.seen = !!raw?.seen;
+  if (typeof raw?.seenVersion === 'string' && /^\d+\.\d+\.\d+$/.test(raw.seenVersion)) s.seenVersion = raw.seenVersion;
   const l = raw?.last;
   if (l && isKind(l.kind) && isShape(l.shape) && okColor(l.colors?.L)) {
     s.last = { kind: l.kind, mg: Number(l.mg) > 0 ? Number(l.mg) : 20, shape: l.shape, mode: l.mode === 'halves' ? 'halves' : 'whole',

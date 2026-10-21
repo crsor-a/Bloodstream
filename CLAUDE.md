@@ -30,8 +30,11 @@ src/
   lib/storage.ts     IndexedDB store, fallbacks, legacy import, backup format
   lib/time.ts        formatting and clock-time resolution rules
   lib/pill.ts        pill SVG builder + fade line
+  lib/calendar.ts    pure date helpers for the dose calendar (local time, DST-safe)
+  changelog.ts       APP_VERSION + release history shown under the disclaimer
   state.ts           signals + every action that mutates data (single write path)
-  views/             Onboarding, DoseForm, Dashboard, DoseList, Curve, Sleep, Effectivity, DataCard
+  views/             Onboarding, DoseForm, Dashboard, DoseList, Calendar, Curve, Sleep, Effectivity,
+                     DataCard, Changelog
   components/        Segmented, Switch, Sheet, ActionSheet, Toast
   styles/app.css     the whole design system (tokens at the top)
 tests/               Vitest; fake-indexeddb for storage
@@ -44,6 +47,18 @@ Rules of the road:
 - Model code stays pure and unit-tested. If you change a constant in `pk.ts`, the label-anchor
   tests in `tests/pk.test.ts` must still pass (IR Tmax ≈ 3 h, XR ≈ 7 h, half-lives by age).
 - Copy lives in `model/copy.ts`, not inline in components, except one-off labels.
+
+## Releases and versioning
+
+MAJOR.MINOR.PATCH. MAJOR = a rebuild or any change to how saved data is stored (always with a
+migration that keeps existing data). MINOR = new features. PATCH = fixes and visual polish.
+To release: add an entry at the top of `src/changelog.ts`, set `APP_VERSION` to match, bump
+`package.json`. Returning users get an "Updated to X" toast and a NEW badge on the changelog
+until it has been on screen (`settings.seenVersion`).
+
+Updates: the service worker is registered in `src/main.tsx` (autoUpdate, skipWaiting +
+clientsClaim). It checks on launch, on resume and hourly, and reloads into the new version.
+Data lives in IndexedDB, so updates never touch it. Never add code that clears storage on update.
 
 ## Design rules (keep these)
 
@@ -119,10 +134,15 @@ Sources:
   the past occurrence nearest the dose's current time (`resolvePast`).
 - The plus button opens a sheet with the same form to add a stacked dose.
 - The dashboard skips onboarding while any tracked dose is within the last 24 h.
+- Dose calendar: week / month / year on the dashboard, Expand opens a full-screen viewer with
+  day details and range stats. Dots are white when every logged dose is the same kind+mg, and
+  color-coded per kind+mg (TYPE_PALETTE) when there is more than one. Planned doses are hollow.
+  Uses the full history (not the 72 h model window).
+- Sleep card header reads "<Band> interference"; the gauge shows only the percentage.
 
 ## Roadmap ideas (not built yet)
 
-- History view (calendar or list of past days, per-day curves) using the stored history.
+- Per-day curves inside the calendar viewer (tap a past day to replay its curve).
 - Daily summary and simple trends (typical dose time, typical bedtime interference).
 - Optional local notifications (e.g. "planned dose time") for installed web apps (iOS 16.4+).
 - Notes per dose (sleep quality, meals) to correlate with how a day felt.

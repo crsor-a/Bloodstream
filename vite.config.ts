@@ -9,7 +9,7 @@ export default defineConfig({
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script-defer',
+      injectRegister: false,   // registered in src/main.tsx with update checks
       includeAssets: ['icons/drop-64.png', 'icons/drop-180.png'],
       manifest: {
         name: 'Bloodstream',
@@ -27,7 +27,7 @@ export default defineConfig({
           { src: 'icons/drop-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,png,webmanifest}'], cleanupOutdatedCaches: true }
+      workbox: { globPatterns: ['**/*.{js,css,html,png,webmanifest}'], cleanupOutdatedCaches: true, clientsClaim: true, skipWaiting: true }
     })
   ],
   build: { target: 'es2020', cssMinify: true },

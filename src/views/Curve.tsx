@@ -78,7 +78,7 @@ export function Curve() {
   const r = rel(ts, t), w = dayWord(ts, t);
 
   return (
-    <section class="dsec reveal" style={{ '--d': 6 } as any} aria-labelledby="hCurve">
+    <section class="dsec reveal" style={{ '--d': 7 } as any} aria-labelledby="hCurve">
       <div class="sec-head"><h2 id="hCurve">Your curve</h2>{dot !== null && <button class="link" type="button" onClick={() => setDot(null)}>Jump to now</button>}</div>
       <div class="card graph-card">
         <div class="readout">

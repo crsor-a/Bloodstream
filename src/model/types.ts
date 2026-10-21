@@ -28,6 +28,8 @@ export interface Settings {
   /** Doses before this time are kept in history but no longer tracked ("Start over"). */
   resetAt: number;
   seen: boolean;
+  /** Newest changelog version the user has seen (null = never). */
+  seenVersion: string | null;
   /** Last-used form values, so the next dose form starts where you left off. */
   last: (PillLook & { kind: Kind; mg: number; shapeTouched: boolean }) | null;
 }
@@ -35,5 +37,5 @@ export interface Settings {
 export const SHAPES: Shape[] = ['capsule', 'round', 'oval'];
 export const isShape = (s: unknown): s is Shape => SHAPES.includes(s as Shape);
 
-export const DEFAULT_SETTINGS: Settings = { sleep: '23:00', resetAt: 0, seen: false, last: null };
+export const DEFAULT_SETTINGS: Settings = { sleep: '23:00', resetAt: 0, seen: false, seenVersion: null, last: null };
 export const DEFAULT_PROFILE: Profile = { band: 'adult' };

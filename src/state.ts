@@ -4,6 +4,7 @@ import type { Band } from './model/pk';
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type Dose, type PillLook, type Profile, type Settings } from './model/types';
 import { migrateLegacy, newId, openStore, type Snapshot, type Store } from './lib/storage';
 import { DAY } from './lib/time';
+import { APP_VERSION, CHANGELOG } from './changelog';
 
 /* ---------------- signals ---------------- */
 export const now = signal(Date.now());
@@ -22,7 +23,11 @@ export const flight = signal<{ rect: DOMRect; look: PillLook } | null>(null);
 export const entering = signal(false);
 export const sheetOpen = signal(false);
 export const actionOpen = signal(false);
+/** Full-screen calendar viewer: null = closed. */
+export const calendarOpen = signal<{ scale: import('./lib/calendar').Scale; anchor: number; selected: number | null } | null>(null);
 export const toast = signal<{ text: string; id: number } | null>(null);
+/** True when this build has a changelog entry the user hasn't seen yet. */
+export const whatsNew = signal(false);
 
 let store: Store;
 let toastTimer = 0;
@@ -47,6 +52,13 @@ export async function boot() {
     now.value = Date.now();
   });
   view.value = hasRecent() ? 'dash' : 'onboard';
+  if (settings.value.seenVersion !== APP_VERSION) {
+    const returning = snap.doses.length > 0 || snap.settings.seen;
+    if (returning) {
+      whatsNew.value = true;
+      setTimeout(() => showToast(`Updated to ${APP_VERSION}: ${CHANGELOG[0].title.toLowerCase()}`), 1200);
+    } else saveSettings({ ...settings.value, seenVersion: APP_VERSION });
+  }
   if (view.value === 'dash') sweepToken.value++;
   checkPersisted();
 
@@ -106,6 +118,11 @@ export function startOver() {
     saveSettings({ ...settings.value, resetAt: t });
     view.value = 'onboard';
   });
+}
+export function markVersionSeen() {
+  if (settings.value.seenVersion === APP_VERSION) return;
+  saveSettings({ ...settings.value, seenVersion: APP_VERSION });
+  whatsNew.value = false;
 }
 export function setSleep(v: string) { if (/^\d\d:\d\d$/.test(v)) saveSettings({ ...settings.value, sleep: v }); }
 
