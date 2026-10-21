@@ -35,7 +35,8 @@ src/
   components/        Segmented, Switch, Sheet, ActionSheet, Toast
   styles/app.css     the whole design system (tokens at the top)
 tests/               Vitest; fake-indexeddb for storage
-public/              icons: plain white teardrop on black, same shape as the top-bar brand mark
+public/icons/        plain white teardrop on black, same shape as the top-bar brand mark.
+                     To change the icon, use NEW file names (caches and iOS keep old URLs).
 ```
 
 Rules of the road:
