@@ -29,9 +29,8 @@ export function untilWords(at: number, t: number): string {
   const days = Math.round((startOf(at) - startOf(t)) / DAY);
   if (days <= 0) return 'today';
   if (days === 1) return 'tomorrow';
-  if (days < 7) return `in ${days} days`;
-  const w = Math.round(days / 7);
-  if (days < 28) return w === 1 ? 'in about a week' : `in about ${w} weeks`;
+  if (days < 14) return `in ${days} days`;
+  if (days < 28) return `in about ${Math.round(days / 7)} weeks`;
   return 'in about a month';
 }
 const startOf = (ts: number) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };

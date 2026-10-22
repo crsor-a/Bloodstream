@@ -427,7 +427,9 @@ input[type="date"]{background:var(--fill);color:var(--label);border:0;border-rad
 .quick-row,.slot-banner{position:relative;display:flex;align-items:center;gap:12px;padding:12px 14px 12px 16px;flex-wrap:wrap}
 .quick-row+.quick-row::before{content:"";position:absolute;top:0;left:76px;right:0;height:1px;transform:scaleY(.5);background:var(--sep)}
 .quick-row.due{background:rgba(255,255,255,.04)}
-.quick-actions{display:flex;gap:6px;margin-left:auto}
+.quick-row .dose-info{flex:1 1 0}
+.quick-actions{display:flex;gap:8px;flex-basis:100%;padding-left:60px}
+.slot-banner .quick-actions{padding-left:60px}
 .slot-banner{margin-top:14px}
 .med-btn{gap:12px;justify-content:flex-start}
 .med-btn .mini-pill{flex:0 0 40px;width:40px}
@@ -450,6 +452,8 @@ input[type="date"]{background:var(--fill);color:var(--label);border:0;border-rad
 .type-tile.on svg{stroke:var(--on-accent)}
 .type-tile.on small{color:rgba(0,0,0,.6)}
 .cat-chips{margin-top:0}
+.cat-picked{display:flex;align-items:center;gap:12px}
+.cat-picked .chip{pointer-events:none}
 .dd{overflow:hidden}
 .dd-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:12px 16px;text-align:left;font-size:16px}
 .dd-btn[disabled]{color:var(--label3)}

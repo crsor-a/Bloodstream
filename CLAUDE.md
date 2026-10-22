@@ -1,14 +1,16 @@
 # Bloodstream
 
-A personal, local-first web app that tracks Adderall (mixed amphetamine salts, IR and XR):
-where a dose is in the bloodstream right now, how strong it likely feels, sleep interference
-at a planned bedtime, and effect summaries across ADHD-related areas of functioning.
+A personal, local-first web app that tracks Adderall (mixed amphetamine salts, IR and XR) and its
+generics: where a dose is in the bloodstream right now, how strong it likely feels, sleep
+interference at a planned bedtime, and zone-based effect summaries across ADHD-related areas of
+functioning. Version 4 adds saved medications and schedules, doctor logging with a library of
+articles, appointments, incognito mode and living backgrounds.
 Owner: Rauf (crsor-a). Primary device: iPhone, installed to the Home Screen.
 
 ## Commands
 
 - `npm run dev` start the dev server
-- `npm test` run the Vitest suites (model, storage, time). Run before every commit.
+- `npm test` run the Vitest suites (model, storage, migration, schedules, content, zones). Run before every commit.
 - `npm run build` typecheck + production build into `dist/` (includes the service worker)
 - `npm run preview` serve the build locally (the service worker only works on https or localhost)
 
@@ -23,21 +25,36 @@ Vite 5 + TypeScript (strict) + Preact 10 with `@preact/signals`. `idb` for Index
 
 ```
 src/
-  model/pk.ts        single-dose pharmacokinetics (pure functions)
-  model/regimen.ts   multi-dose superposition, phases, key times, sleep index
-  model/copy.ts      all effectivity, phase and sleep wording
-  model/types.ts     Dose, PillLook, Profile, Settings
-  lib/storage.ts     IndexedDB store, fallbacks, legacy import, backup format
-  lib/time.ts        formatting and clock-time resolution rules
-  lib/pill.ts        pill SVG builder + fade line
-  lib/calendar.ts    pure date helpers for the dose calendar (local time, DST-safe)
-  changelog.ts       APP_VERSION + release history shown under the disclaimer
-  state.ts           signals + every action that mutates data (single write path)
-  views/             Onboarding, DoseForm, Dashboard, DoseList, Calendar, Curve, Sleep, Effectivity,
-                     DataCard, Changelog
-  components/        Segmented, Switch, Sheet, ActionSheet, Toast
-  styles/app.css     the whole design system (tokens at the top)
-tests/               Vitest; fake-indexeddb for storage
+  model/pk.ts          single-dose pharmacokinetics (pure functions)
+  model/regimen.ts     multi-dose superposition, phases, key times, sleep index
+  model/schedule.ts    schedule slots, due/missed states, skips (pure)
+  model/copy.ts        effectivity, phase, sleep, greeting and incognito wording; DISCLAIMER; AREA_IDS
+  model/types.ts       Dose, Med, Schedule, LogEntry, Appointment, Theme, Profile, Settings
+  content/suggestions.ts  logging categories, ~140 suggestions (urgency + article), guidance text
+  content/articles/    36 articles (safety, effects, everyday, areas); index.ts has lookup + search
+  content/sources.ts   every citation URL, reused by articles
+  content/types.ts     article block/visual format
+  lib/storage.ts       IndexedDB store (v2), fallbacks, legacy import, backup format 2
+  lib/zones.ts         seven effectivity zones and colors
+  lib/area.ts          area value/zone at a time, series, next zone change (for adaptive articles)
+  lib/sun.ts           solar position, sunrise/sunset, approximate location from the time zone
+  lib/notify.ts        notification permission + in-app reminder timers
+  lib/ics.ts           Calendar exports (weekly schedules, single appointments)
+  lib/share.ts         share sheet / download / clipboard helpers
+  lib/names.ts         dose labels using saved medication names
+  lib/time.ts, lib/pill.ts, lib/calendar.ts   as before
+  changelog.ts         APP_VERSION + release history (shown on its own page)
+  state.ts             signals + every action that mutates data (single write path)
+  views/               Onboarding (8 pages), Dashboard, Header (top bar, greeting, disclaimer),
+                       AddSheet (log / medications / schedules / reminders), DueCards, DoseForm,
+                       DoseList, Calendar, Curve, Sleep, Effectivity, DataCard, Appearance,
+                       LogSheet, Library, Appointments, Reader, LoggingTour, UpgradeTour,
+                       Incognito, Changelog, RetroDose
+  components/          controls (Segmented, Switch, Sheet, Collapse, Toast, useOverlay),
+                       PillEditor, Visuals (article charts), Background + shaders (WebGL effects)
+  styles/app.css       the whole design system (tokens at the top, v4 section at the end)
+tests/               Vitest; fake-indexeddb for storage; migration.test.ts builds a real v1 DB
+public/sw-notify.js  notification click handler imported into the generated service worker
 public/icons/        plain white teardrop on black, same shape as the top-bar brand mark.
                      To change the icon, use NEW file names (caches and iOS keep old URLs).
 ```
@@ -46,7 +63,10 @@ Rules of the road:
 - UI never writes to storage directly. Add an action in `state.ts`.
 - Model code stays pure and unit-tested. If you change a constant in `pk.ts`, the label-anchor
   tests in `tests/pk.test.ts` must still pass (IR Tmax ≈ 3 h, XR ≈ 7 h, half-lives by age).
-- Copy lives in `model/copy.ts`, not inline in components, except one-off labels.
+- Copy lives in `model/copy.ts`, not inline in components, except one-off labels. Article text
+  lives in `content/articles/`, suggestion text and guidance in `content/suggestions.ts`.
+- Every suggestion must point at an existing article, and every article needs `covers` and at
+  least one source. `tests/content.test.ts` enforces this.
 
 ## Releases and versioning
 
@@ -63,19 +83,30 @@ Data lives in IndexedDB, so updates never touch it. Never add code that clears s
 ## Design rules (keep these)
 
 - Apple / SwiftUI feel: pitch-black background (#000), iOS inset-grouped cards (#1c1c1e),
-  segmented controls, switches, bottom sheets, action sheets, toasts. System SF font stack.
+  segmented controls, switches, bottom sheets, toasts, full-screen viewers that push in from the
+  right. System SF font stack; the article reader uses ui-serif (New York on Apple devices).
 - **White is the only accent.** No red/pink accents. Semantic colors are allowed only for
-  information: the sleep severity gauge (green to red) and destructive actions (#ff453a).
+  information: the sleep severity gauge, the seven effectivity zones (red baseline to green full
+  effect; appetite suppression and physical stimulation run the other way so green always means
+  settled), logging urgency (emergency #ff453a, stop #ff6b3d, soon #ff9f0a), and destructive actions.
+- With no background effect, bars are solid black. When a background effect is on, `html.glass`
+  makes cards, bars, sheets and viewers translucent with backdrop blur. Incognito turns effects off.
 - The customizable pill is the hero. After logging, the pill flies to the center and a white
   line sweeps down through it to the share remaining; everything above the line is ghosted.
 - Mobile first: 16px side gutters with safe-area insets, no horizontal scroll, works in
   standalone (Home Screen) mode with a black-translucent status bar.
 - No emojis anywhere in the UI.
-- The disclaimer must appear on the dose form and at the bottom of the dashboard, verbatim:
-  "Bloodstream is not a replacement for doctor advice and information shown may be inaccurate.
-  Always double-check and never use this website to plan doses not approved by a healthcare
-  professional."
+- The disclaimer (`DISCLAIMER` in `model/copy.ts`, rendered by `Disclaimer` in `views/Header.tsx`)
+  must appear in onboarding, on the dose forms (add sheet), and at the bottom of the dashboard.
+  Current text: "Bloodstream is made only for Adderall (mixed amphetamine salts, IR and XR) and its
+  generic versions, for people keeping track of their ADHD treatment. Its curves, zones and articles
+  are estimates built from published averages, not measurements of your body, and they can be
+  wrong. It doesn't replace your doctor or pharmacist: check anything important with them, and
+  never use Bloodstream to plan or change doses your prescriber hasn't approved."
+  The incognito view intentionally omits it (no medical wording allowed there).
 - Never add features that suggest or optimize doses. The app describes logged doses only.
+  Logging guidance may tell people to contact a prescriber, stop until they do (serious
+  suggestions), or get emergency care; it never proposes a different dose.
 
 ## Pharmacology model (sources and choices)
 
@@ -98,6 +129,8 @@ Data lives in IndexedDB, so updates never touch it. Never add code that clears s
 - "Left" = remaining mg ÷ (today's taken mg + carry-over at the start of today).
 - Blood level % = relative to the peak of the largest dose in today's session (can exceed 100%).
 - Sleep interference = 0.55·effect + 0.45·smoothstep(0.45, 1.0, level). A rough index.
+- Effectivity zones: seven bands with upper edges 6/18/34/52/70/86/100% (`lib/zones.ts`). Tiers
+  for adaptive article sections: low = zones 1–3, mid = 4–5, high = 6–7.
 
 Sources:
 - FDA label, Adderall XR: https://www.accessdata.fda.gov/drugsatfda_docs/label/2023/021303s038lbl.pdf
@@ -108,51 +141,72 @@ Sources:
 ## Data and storage
 
 - Everything is local to the device. Nothing is uploaded. No analytics.
-- IndexedDB database `bloodstream` v1: `doses` (keyPath `id`, index `at`) and `kv`
-  (`profile`, `settings`, `flag:*`). Full history is kept; nothing auto-deletes.
-- Schema changes: bump the version in `openStore()` and add an `if (oldVersion < N)` block.
-  Never edit earlier blocks. Keep `sanitizeDose` accepting every older shape.
-- Fallbacks: localStorage record `bloodstream.v3`, then memory (shown in the Your data card).
+- IndexedDB database `bloodstream` v2:
+  - v1 stores: `doses` (keyPath `id`, index `at`) and `kv` (`profile`, `settings`, `flag:*`).
+  - v2 adds `meds`, `schedules`, `logs`, `appointments` (keyPath `id`).
+  Full history is kept; nothing auto-deletes.
+- Schema changes: bump `DB_VERSION` in `storage.ts` and add an `if (oldVersion < N)` block.
+  Never edit earlier blocks. Keep every `sanitize*` accepting older shapes. The upgrade waits
+  (instead of falling back) when another tab blocks it, and an old tab reloads itself.
+- Fallbacks: localStorage record `bloodstream.v3`, then memory (shown in Data & information controls).
 - `migrateLegacy()` imports data from the old single-file builds (v1 cookie `bs_dose`,
   v2 localStorage `bloodstream` / cookie `bs2`) once, on the same origin.
-- Backups: JSON `{ app: "bloodstream", format: 1, ... }`. Export uses the share sheet on touch
-  devices, a download elsewhere. Import merges by dose id. Bump `BACKUP_FORMAT` only for
-  breaking changes and keep reading older formats.
+- Backups: JSON `{ app: "bloodstream", format: 2, ... }` with every collection. Format 1 files
+  still import (missing collections default to empty). Export uses the share sheet on touch
+  devices, a download elsewhere. Import merges by id.
+- Per-viewer conveniences in localStorage (safe to lose): reader text size (`bs.readerSize`),
+  auto-surfaced schedule slots (`bs.surfaced`).
 - iPhone notes: the Home Screen app has its own storage, separate from Safari, and is exempt
   from Safari's 7-day script-storage cap while it is being used. Deleting the icon deletes its
   data, hence the backup feature. `navigator.storage.persist()` is requested after the first dose.
-- There is no restart button. Full resets go through Your data > Delete all data, which also
-  brings back first-visit onboarding. `settings.resetAt` is legacy (old Start over) and ignored.
+- There is no restart button. Full resets go through Data & information controls > Delete all
+  data, which also brings back first-visit onboarding. `settings.resetAt` is legacy and ignored.
 
 ## Behaviors worth knowing
 
-- Onboarding page 2 asks every time: IR/XR, mg, time (or "Not taken yet" to plan ahead),
-  age group, and the pill customizer (capsule / round / oval; whole or two-tone; 11 swatches,
-  "clear" beads, custom color).
-- Planned doses show the full curve and an "I took it now" button; tracking flips to live on
-  its own at the planned time.
-- Time correction (Doses list → Edit) only saves times that already happened; it resolves to
-  the past occurrence nearest the dose's current time (`resolvePast`).
-- The plus button opens a sheet with the same form to add a stacked dose.
-- Onboarding only appears on first entry (until the first dose is ever logged) or after Delete all
-  data. Otherwise the app opens to the dashboard; with nothing taken in 72 h it shows an idle hero
-  ("Your bloodstream is clear", Log a dose) plus the calendar and data sections.
-- Age group lives in onboarding and in Your data (segmented control, `setBand`).
-- Dose calendar: week / month / year on the dashboard, Expand opens a full-screen viewer with
-  day details and range stats. Dots are white when every logged dose is the same kind+mg, and
-  color-coded per kind+mg (TYPE_PALETTE) when there is more than one. Planned doses are hollow.
-  Uses the full history (not the 72 h model window).
-- Sleep card header reads "<Band> interference"; the gauge shows only the percentage.
-- Past doses: in the full-screen calendar, a selected day up to today shows "Add a dose on this
-  day". The sheet (`views/RetroDose.tsx`, layered above the viewer) pre-fills kind/mg/look from
-  the most recent taken dose; the user sets the time (future times are blocked). Saved with
-  `addDose(..., { remember: false })` so the normal form defaults don't change. Doses within the
-  72 h window feed the curve automatically. Day-detail rows expand to a two-tap Remove.
+- Onboarding (first entry or after Delete all data) has 8 pages: scope and disclaimer, how it
+  works, name + age group, the medication (saved as a Med, with the pill customizer), schedule +
+  reminders, doctor logging (phase question), privacy and appearance, and today's dose (taken /
+  plan / not today). Nothing is saved until the last page.
+- People upgrading from 3.x get `settings.setupV4 = 'pending'`: a "New in version 4" card and
+  a short tour (save last dose as a medication, name, logging, background).
+- Top bar, right to left: incognito (always), log (when doctor logging is on), add, clock.
+- Greeting header: date, "Good morning/afternoon/evening[, name]" ("Still up?" late), and a line
+  that follows the curve phase.
+- Add sheet (plus): Log a dose (saved meds with Take now / Other time with day chips, or a
+  one-off dose that can be saved) and Medications (saved meds, schedules, reminders, Calendar
+  export). Doses logged from a saved med carry `medId`; schedule-linked ones carry `scheduleId`
+  and show a Scheduled tag.
+- Schedule slots: upcoming (within the reminder lead), due (0–2 h), missed (2–8 h). Due cards
+  sit above the hero; a due slot auto-opens the add sheet once. Taken = linked dose that day, or
+  the same med (or kind+mg) within 3 h. "Skip today" stores `scheduleId|YYYY-MM-DD`.
+- Reminders: in-app timers + service-worker notifications while the app is alive, plus an .ics
+  export for reliable alerts. iOS web apps can't schedule notifications while closed without a
+  push server, and the UI says so.
+- Doctor logging: type tile, category, suggestion dropdown (picking one collapses the custom
+  title box), additional information, guidance panel, priority. Library viewer: Entries
+  (expand, linked article, edit, bulk select delete, share as text), Articles (sections,
+  search over titles/headers), Appointments (add/edit, Calendar export).
+- Appointments within 30 days show a banner under the hero; for 14 days after, a review banner
+  links to clearing entries, editing medications, and exporting before a reset.
+- Reader: full-screen, text size toggle, linked-entry banner, sources, related. Area articles
+  start with a live panel (zone, meter, today's curve for that area, next zone change) and
+  swap their strategy sections by tier.
+- Incognito: `settings.incognitoUntil` (0 off, -1 until turned off, else end time) so it
+  survives closing the app. Shows only a neutral rhythm graph, words like Rising / Steady /
+  Easing, one percentage, and neutral key times. Hides the pill, doses, calendar, logging,
+  name and backgrounds.
+- Backgrounds: `settings.theme` (effect, colors, dim, motion, location). Shaders render at
+  reduced resolution, about 30 fps, pause when hidden and honor reduced motion. The sky uses
+  solar position from a rounded location (or the time zone) plus a moon phase.
+- Calendar: dots for doses, a marker for appointments, "Scheduled:" rows on future days
+  (schedules don't add dots). Past days can get added doses (RetroDose).
+- Changelog: a single line under the disclaimer opens the full history page.
 
 ## Roadmap ideas (not built yet)
 
 - Per-day curves inside the calendar viewer (tap a past day to replay its curve).
 - Daily summary and simple trends (typical dose time, typical bedtime interference).
-- Optional local notifications (e.g. "planned dose time") for installed web apps (iOS 16.4+).
-- Notes per dose (sleep quality, meals) to correlate with how a day felt.
+- Push-based reminders (would need a server; currently in-app + Calendar export).
+- Linking log entries to doses and showing them on the curve.
 - CSV export alongside the JSON backup.

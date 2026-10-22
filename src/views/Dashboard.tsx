@@ -124,8 +124,8 @@ function Hero() {
       <div class="dose-chip reveal" style={{ '--d': 1 } as any}>
         {hd.scheduleId && <span class="chip-tag">Scheduled</span>}
         {planned
-          ? `Planned · ${name} · ${hd.kind} ${fmtMg(hd.mg)} mg · ${fmtWhen(hd.at, false, t)}`
-          : `${name}${hd.medId ? ` · ${hd.kind}` : ''} · ${fmtMg(hd.mg)} mg · taken ${fmtWhen(hd.at, true, t)}${takenToday > 1 ? ` · ${takenToday} doses today` : ''}`}
+          ? `Planned · ${name} · ${fmtWhen(hd.at, false, t)}`
+          : `${name} · taken ${fmtWhen(hd.at, true, t)}${takenToday > 1 ? ` · ${takenToday} doses today` : ''}`}
       </div>
       <h1 class="headline reveal" style={{ '--d': 2 } as any}>{headline}</h1>
       <p class="subline reveal" style={{ '--d': 3 } as any}>{sub}</p>

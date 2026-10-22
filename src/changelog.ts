@@ -1,5 +1,5 @@
 /**
- * Release history, shown at the bottom of the dashboard.
+ * Release history, shown on its own page from the line under the disclaimer.
  *
  * Versioning: MAJOR.MINOR.PATCH
  *   MAJOR  a rebuild, or any change to how saved data is stored (always ships with a migration
@@ -14,9 +14,26 @@ export type ChangeType = 'new' | 'improved' | 'fixed';
 export interface Change { type: ChangeType; text: string }
 export interface Release { version: string; date: string; title: string; changes: Change[] }
 
-export const APP_VERSION = '3.3.0';
+export const APP_VERSION = '4.0.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '4.0.0', date: '2026-10-22', title: 'Bloodstream 4',
+    changes: [
+      { type: 'new', text: 'Saved medications: log your usual dose with one tap, or at any other time and day.' },
+      { type: 'new', text: 'Schedules for weekdays, weekends or any days you choose, with check-ins when a dose is due, reminders, and a one-tap export to the Calendar app for alerts when Bloodstream is closed.' },
+      { type: 'new', text: 'Doctor logging: note side effects, benefits, questions and concerns from over 140 suggestions, each with guidance and a linked article. Serious ones say clearly when to call or get help.' },
+      { type: 'new', text: 'Logging library with your entries, appointments and 36 articles written from the FDA label and other medical sources, in a dedicated reader with charts and visuals.' },
+      { type: 'new', text: 'Appointments show on your calendar, and the dashboard reminds you to start noting things a few weeks ahead, then helps you tidy up afterward.' },
+      { type: 'new', text: 'Effectivity now uses seven color-coded zones, and every area opens an article that adapts to the zone you\'re in right now.' },
+      { type: 'new', text: 'Incognito: a neutral screen with no medical words, for as long as you choose, even if you close the app.' },
+      { type: 'new', text: 'Appearance: a living sky that follows the sun where you are, aurora, rain on glass, snowfall, nebula, or your own colors, with a translucent interface.' },
+      { type: 'new', text: 'Greetings that change through the day, with your name if you add one in Data & information controls.' },
+      { type: 'improved', text: 'A new welcome that sets up your medication, schedule, logging and privacy in one pass.' },
+      { type: 'improved', text: 'Clearer fine print, and this changelog now lives on its own page.' },
+      { type: 'improved', text: 'Your existing doses and settings carry over untouched. Backups now include medications, schedules, logs and appointments.' }
+    ]
+  },
   {
     version: '3.3.0', date: '2026-10-21', title: 'Simpler start',
     changes: [

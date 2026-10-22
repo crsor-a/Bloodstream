@@ -106,3 +106,8 @@ export function useEscape() {
     return () => document.removeEventListener('keydown', h);
   }, []);
 }
+
+/** Animated show/hide. Hidden content is inert so it can't be tapped or focused. */
+export function Collapse(p: { open: boolean; children: ComponentChildren }) {
+  return <div class={'collapse' + (p.open ? '' : ' closed')} {...(p.open ? {} : { inert: '' as any, 'aria-hidden': 'true' })}><div>{p.children}</div></div>;
+}

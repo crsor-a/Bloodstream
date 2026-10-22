@@ -3,7 +3,10 @@ import { fmtMg, pillSVG } from '../lib/pill';
 import { fmtTime, MIN } from '../lib/time';
 import { armReminders, type Reminder } from '../lib/notify';
 import { slotsOnDay, slotTaken } from '../model/schedule';
-import { addPage, addSlot, attention, doses, incognito, meds, schedules, settings, sheetOpen, showToast, skipSlot, sweepToken, takeMed } from '../state';
+import {
+  addPage, addSlot, apptSheet, attention, calendarOpen, doses, incognito, libraryOpen, logSheet, meds, reader, schedules, settings, sheetOpen,
+  showToast, skipSlot, sweepToken, takeMed, tour, view
+} from '../state';
 
 /** Check-ins for scheduled doses: shown on the dashboard, never in incognito. */
 export function DueCards() {
@@ -68,5 +71,34 @@ export function startReminderSync() {
       }
     }
     armReminders(list);
+  });
+}
+
+/**
+ * When a scheduled dose comes due and hasn't been logged, open the add card for it once,
+ * as long as nothing else is on screen. Each slot is only surfaced one time.
+ */
+const SURFACED_KEY = 'bs.surfaced';
+function surfacedSet(): Set<string> { try { return new Set(JSON.parse(localStorage.getItem(SURFACED_KEY) || '[]')); } catch { return new Set(); } }
+function remember(key: string) {
+  const s = surfacedSet(); s.add(key);
+  try { localStorage.setItem(SURFACED_KEY, JSON.stringify([...s].slice(-40))); } catch { /* storage unavailable */ }
+}
+export function startAutoSurface() {
+  let timer = 0;
+  return effect(() => {
+    const items = attention.value.filter(a => a.state === 'due');
+    const busy = view.value !== 'dash' || incognito.value || sheetOpen.value || !!logSheet.value || !!libraryOpen.value || !!reader.value
+      || !!apptSheet.value || !!calendarOpen.value || !!tour.value || settings.value.setupV4 === 'pending';
+    clearTimeout(timer);
+    if (busy || !items.length) return;
+    const seen = surfacedSet();
+    const slot = items.map(a => a.slot).find(sl => !seen.has(sl.key));
+    if (!slot) return;
+    timer = window.setTimeout(() => {
+      if (sheetOpen.value) return;
+      remember(slot.key);
+      addSlot.value = slot; addPage.value = 'log'; sheetOpen.value = true;
+    }, 1500);
   });
 }

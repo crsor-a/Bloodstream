@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { fmtTime, fmtWhen, HOUR, rel } from '../lib/time';
+import { dayWord, fmtTime, fmtWhen, rel } from '../lib/time';
 import { rhythmWord } from '../model/copy';
 import { incognito, incognitoSheet, now, regimen, setIncognito, settings, showToast } from '../state';
 import { Sheet } from '../components/controls';
@@ -78,7 +78,7 @@ export function IncognitoView() {
   return (
     <div class="inc-view">
       <div class="inc-banner">
-        <span>Private view {u === -1 ? 'is on' : `until ${fmtTime(u)}`}</span>
+        <span>Private view {u === -1 ? 'is on' : `until ${fmtWhen(u, true)}`}</span>
         <button type="button" class="pill-btn" onClick={() => { setIncognito(0); showToast('Incognito off'); }}>End</button>
       </div>
       <section class="card inc-card">
@@ -100,9 +100,8 @@ export function IncognitoView() {
         </div>
       </section>
       {kt && <div class="stats">{tile('Rises', kt.onset)}{tile('High point', kt.peakAt)}{tile('Eases', kt.fade)}{tile('Rest', kt.clear)}</div>}
-      <p class="disclaimer">Private view hides details. End it to see everything. {u > 0 && `It ends on its own ${fmtWhen(u, true)}.`}</p>
+      <p class="disclaimer">Private view hides details. End it to see everything.{u > 0 ? ` It ends on its own ${dayWord(u) ? dayWord(u).toLowerCase() + ' ' : ''}at ${fmtTime(u)}.` : ''}</p>
     </div>
   );
 }
 
-export const INCOGNITO_MAX_HOURS = 24 * HOUR;

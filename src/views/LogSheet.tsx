@@ -5,14 +5,14 @@ import {
 } from '../content/suggestions';
 import { articleById } from '../content/articles';
 import { addLog, libraryOpen, logs, logSheet, showToast, updateLog } from '../state';
-import { Sheet, Switch } from '../components/controls';
+import { Collapse, Sheet, Switch } from '../components/controls';
 import { openArticle } from './Reader';
 
 export const TYPE_ICONS: Record<LogType, string> = {
   effect: 'M12 3l9 16H3z M12 10v4 M12 17h.01',
   benefit: 'M5 12l4 4L19 6',
-  question: 'M9.1 9a3 3 0 1 1 4.2 2.7c-.8.4-1.3 1.1-1.3 2V14 M12 17.5h.01',
-  concern: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18z M12 8v5 M12 16h.01'
+  question: 'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18z M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.3 M12 16.6h.01',
+  concern: 'M4 5h16v11H10l-4.5 3.5V16H4z M12 8.2v3.6 M12 14.2h.01'
 };
 const TYPE_SUB: Record<LogType, string> = {
   effect: 'Something unwanted', benefit: 'Something that helps', question: 'To ask your doctor', concern: 'Something worrying you'
@@ -46,6 +46,7 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
   const [details, setDetails] = useState(existing?.details ?? '');
   const [priority, setPriority] = useState(existing?.priority ?? false);
   const [listOpen, setListOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(!existing);
 
   const list = useMemo(() => type && cat ? suggestionsFor(type, cat) : [], [type, cat]);
   const chosen = suggestionById(sid);
@@ -57,7 +58,7 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
     : custom.trim().length > 3 ? CUSTOM_GUIDANCE : null;
 
   const pickType = (t: LogType) => { setType(t); if (chosen && !chosen.types.includes(t)) setSid(null); };
-  const pickCat = (c: string) => { setCat(c); setListOpen(true); if (chosen && chosen.cat !== c) setSid(null); };
+  const pickCat = (c: string) => { setCat(c); setCatOpen(false); setListOpen(true); if (chosen && chosen.cat !== c) setSid(null); };
   const pick = (s: Suggestion | null) => { setSid(s ? s.id : null); setListOpen(false); };
 
   const save = () => {
@@ -79,11 +80,18 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
         ))}
       </div>
 
-      <div class={'collapse' + (type ? '' : ' closed')}><div>
+      <Collapse open={!!type}>
         <div class="group-label">About</div>
-        <div class="chips cat-chips">
-          {CATEGORIES.map(c => <button key={c.id} type="button" class={'chip' + (cat === c.id ? ' on' : '')} onClick={() => pickCat(c.id)}>{c.label}</button>)}
-        </div>
+        {cat && !catOpen ? (
+          <div class="cat-picked">
+            <span class="chip on">{CATEGORIES.find(c => c.id === cat)?.label}</span>
+            <button type="button" class="link" onClick={() => setCatOpen(true)}>Change</button>
+          </div>
+        ) : (
+          <div class="chips cat-chips">
+            {CATEGORIES.map(c => <button key={c.id} type="button" class={'chip' + (cat === c.id ? ' on' : '')} onClick={() => pickCat(c.id)}>{c.label}</button>)}
+          </div>
+        )}
 
         <div class="group-label">Suggestions</div>
         <div class="card dd">
@@ -92,7 +100,7 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
             <span class="dd-text">{chosen ? chosen.text : !cat ? 'Pick a category to see suggestions' : list.length ? `Choose from ${list.length} suggestion${list.length === 1 ? '' : 's'}` : 'No suggestions here yet'}</span>
             <span class={'dd-chev' + (listOpen ? ' up' : '')} aria-hidden="true" />
           </button>
-          <div class={'collapse' + (listOpen && cat ? '' : ' closed')}><div>
+          <Collapse open={listOpen && !!cat}>
             <div class="dd-list" role="listbox" aria-label="Suggestions">
               {list.map(s => (
                 <button key={s.id} type="button" role="option" aria-selected={sid === s.id} class={'dd-opt' + (sid === s.id ? ' on' : '')} onClick={() => pick(s)}>
@@ -101,14 +109,14 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
               ))}
               <button type="button" role="option" aria-selected={!sid} class={'dd-opt none' + (!sid ? ' on' : '')} onClick={() => pick(null)}>None of these, I'll write my own</button>
             </div>
-          </div></div>
+          </Collapse>
         </div>
 
-        <div class={'collapse' + (chosen ? ' closed' : '')}><div>
+        <Collapse open={!chosen}>
           <div class="group-label">{type ? TITLE_PROMPT[type] : 'Describe it'}</div>
           <div class="card"><input class="text-input wide field" type="text" maxLength={120} value={custom} aria-label={type ? TITLE_PROMPT[type] : 'Describe it'}
             placeholder={type === 'question' ? 'e.g. Should I take it earlier on school days?' : 'In a few words'} onInput={e => setCustom((e.target as HTMLInputElement).value)} /></div>
-        </div></div>
+        </Collapse>
 
         <div class="group-label">Additional information</div>
         <div class="card"><textarea class="text-area" rows={3} maxLength={1000} value={details} aria-label="Additional information"
@@ -122,7 +130,7 @@ function LogForm({ editId, onDone }: { editId?: string; onDone: () => void }) {
             <Switch id="prioSw" checked={priority} onChange={setPriority} />
           </div>
         </div>
-      </div></div>
+      </Collapse>
 
       <button class="btn primary block" type="button" disabled={!can} style={can ? undefined : { opacity: 0.4 }} onClick={save}>{existing ? 'Save changes' : 'Add to library'}</button>
       <p class="foot pad center">Entries stay on this device. Bloodstream doesn't send them to anyone.</p>

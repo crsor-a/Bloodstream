@@ -7,11 +7,11 @@ import { Onboarding } from './views/Onboarding';
 import { Dashboard } from './views/Dashboard';
 import { Toast, useEscape } from './components/controls';
 import { Background } from './components/Background';
-import { startReminderSync } from './views/DueCards';
+import { startAutoSurface, startReminderSync } from './views/DueCards';
 
 function App() {
   useEscape();
-  useEffect(() => startReminderSync(), []);
+  useEffect(() => { const a = startReminderSync(), b = startAutoSurface(); return () => { a(); b(); }; }, []);
   return (
     <>
       {view.value === 'dash' && <Background />}

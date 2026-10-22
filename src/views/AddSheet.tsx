@@ -13,6 +13,7 @@ import {
 import { Segmented, Sheet, Switch } from '../components/controls';
 import { AppearanceRows, KindDoseRows, PillPreview, useMedDraft } from '../components/PillEditor';
 import { DoseForm, initialDraft, type FormResult } from './DoseForm';
+import { Disclaimer } from './Header';
 
 type Page =
   | { name: 'home' }
@@ -345,9 +346,10 @@ export function AddSheet() {
           <Segmented label="Add dose sections" value={addPage.value} onChange={v => { addPage.value = v; }}
             options={[{ v: 'log', label: 'Log a dose' }, { v: 'plan', label: 'Medications' }]} />
           {addPage.value === 'log' ? <LogTab go={go} /> : <PlanTab go={go} />}
+          <Disclaimer onboarding />
         </>}
         {page.name === 'other' && (() => { const m = meds.value.find(x => x.id === page.medId); return m ? <OtherTime med={m} go={go} /> : null; })()}
-        {page.name === 'custom' && <><Back onClick={() => go({ name: 'home' })} /><DoseForm onSubmit={onCustom} offerSave /></>}
+        {page.name === 'custom' && <><Back onClick={() => go({ name: 'home' })} /><DoseForm onSubmit={onCustom} offerSave /><Disclaimer onboarding /></>}
         {page.name === 'med' && <MedEditor key={page.id ?? 'new'} id={page.id} then={page.then} go={go} />}
         {page.name === 'schedule' && <ScheduleEditor key={(page.id ?? 'new') + (page.medId ?? '')} id={page.id} medId={page.medId} go={go} />}
       </div>

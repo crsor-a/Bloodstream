@@ -7,7 +7,7 @@ import { fmtTime } from '../lib/time';
 import {
   appointments, apptSheet, deleteLogs, libraryOpen, logs, logSheet, now, showToast, updateLog, type LibrarySection
 } from '../state';
-import { Segmented, useOverlay } from '../components/controls';
+import { Collapse, Segmented, useOverlay } from '../components/controls';
 import { openArticle } from './Reader';
 import { GuidancePanel, TypeIcon, URGENCY_COLOR } from './LogSheet';
 import { apptWhen, CalIcon, untilWords, upcomingAppt } from './Appointments';
@@ -32,7 +32,7 @@ function EntryRow({ e, open, onToggle, selecting, checked, onCheck }: { e: LogEn
         {s && (s.urgency === 'emergency' || s.urgency === 'stop' || s.urgency === 'soon') && <span class="u-dot" style={{ background: URGENCY_COLOR[s.urgency] }} aria-hidden="true" />}
         {!selecting && <span class={'dd-chev' + (open ? ' up' : '')} aria-hidden="true" />}
       </button>
-      <div class={'collapse' + (open && !selecting ? '' : ' closed')}><div>
+      <Collapse open={open && !selecting}>
         <div class="entry-detail">
           {e.details ? <p class="entry-notes">{e.details}</p> : <p class="entry-notes dim">No additional information.</p>}
           <p class="entry-when">Logged {new Date(e.created).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} at {fmtTime(e.created)}</p>
@@ -44,7 +44,7 @@ function EntryRow({ e, open, onToggle, selecting, checked, onCheck }: { e: LogEn
             <button type="button" class="btn-text danger" onClick={() => { if (!armed) { setArmed(true); return; } deleteLogs([e.id]); showToast('Entry removed'); }}>{armed ? 'Tap again to remove' : 'Remove'}</button>
           </div>
         </div>
-      </div></div>
+      </Collapse>
     </div>
   );
 }
@@ -139,7 +139,7 @@ function Articles() {
           <button type="button" class="art-group-head" aria-expanded={openSec.has(g.section)} onClick={() => toggle(g.section)}>
             <span>{g.section}</span><small>{g.items.length}</small><span class={'dd-chev' + (openSec.has(g.section) ? ' up' : '')} aria-hidden="true" />
           </button>
-          <div class={'collapse' + (openSec.has(g.section) ? '' : ' closed')}><div>
+          <Collapse open={openSec.has(g.section)}>
             <div class="card art-list">
               {g.items.map(a => (
                 <button key={a.id} type="button" class="art-row" onClick={() => openArticle(a.id)}>
@@ -148,7 +148,7 @@ function Articles() {
                 </button>
               ))}
             </div>
-          </div></div>
+          </Collapse>
         </div>
       ))}
       <p class="foot pad">Each article is written for Bloodstream from the FDA label and other medical sources, listed at the end of every article.</p>

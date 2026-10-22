@@ -26,7 +26,13 @@ export function skyPalette(e: number) {
   if (i === -1) i = STOPS.length - 1; if (i === 0) i = 1;
   const a = STOPS[i - 1], b = STOPS[i];
   const k = Math.min(1, Math.max(0, (e - a.e) / (b.e - a.e)));
-  return { zenith: mix3(a.z, b.z, k), horizon: mix3(a.h, b.h, k), glow: mix3(a.g, b.g, k), stars: lerp(a.s, b.s, k), sunUp: sstep(-3, 1, e), cloud: lerp(0.25, 0.85, sstep(-8, 6, e)) };
+  return { zenith: mix3(a.z, b.z, k), horizon: mix3(a.h, b.h, k), glow: mix3(a.g, b.g, k), stars: lerp(a.s, b.s, k), sunUp: sstep(-3, 1, e), cloud: lerp(0.45, 0.8, sstep(-8, 6, e)), cloudLight: sstep(-9, 6, e) };
+}
+
+/** Moon phase: 0 new, 0.5 full. Synodic month from a known new moon (2000-01-06 18:14 UTC). */
+export function moonPhase(ts: number): number {
+  const p = ((ts - 947182440000) / 86_400_000 / 29.530588853) % 1;
+  return p < 0 ? p + 1 : p;
 }
 
 export function skyState(theme: Theme, ts = Date.now()) {
@@ -36,7 +42,19 @@ export function skyState(theme: Theme, ts = Date.now()) {
   const az = south ? (sun.azimuth + 180) % 360 : sun.azimuth;
   const x = Math.min(0.95, Math.max(0.05, 0.5 + (south ? -1 : 1) * (az - 180) / 180 * 0.9));
   const y = 0.08 + sun.elevation / 60 * 0.85;
-  return { ...skyPalette(sun.elevation), x, y, elevation: sun.elevation };
+  // The moon sits roughly where the sun was a fraction of a day earlier (its elongation), which is
+  // close enough to rise and set at believable times for its phase.
+  const phase = moonPhase(ts);
+  const illum = (1 - Math.cos(2 * Math.PI * phase)) / 2;
+  const mpos = sunPosition(ts - phase * 86_400_000 * 1.035, loc.lat, loc.lon);
+  const maz = south ? (mpos.azimuth + 180) % 360 : mpos.azimuth;
+  const moon = {
+    x: Math.min(0.92, Math.max(0.08, 0.5 + (south ? -1 : 1) * (maz - 180) / 180 * 0.9)),
+    y: Math.min(0.9, 0.12 + mpos.elevation / 60 * 0.8),
+    k: (phase < 0.5 ? 1 : -1) * illum,
+    vis: illum > 0.04 ? sstep(-1, 6, mpos.elevation) * sstep(3, -6, sun.elevation) : 0
+  };
+  return { ...skyPalette(sun.elevation), x, y, elevation: sun.elevation, moon };
 }
 
 const css = (c: RGB) => `rgb(${c.map(v => Math.round(Math.min(1, v) * 255)).join(',')})`;
@@ -99,6 +117,7 @@ function GLBackground({ effect, theme }: { effect: ShaderEffect; theme: Theme })
         const s = skyState(th);
         gl!.uniform3fv(U('uZenith'), s.zenith); gl!.uniform3fv(U('uHorizon'), s.horizon); gl!.uniform3fv(U('uGlow'), s.glow);
         gl!.uniform2f(U('uSun'), s.x, s.y); gl!.uniform1f(U('uSunUp'), s.sunUp); gl!.uniform1f(U('uStarVis'), s.stars); gl!.uniform1f(U('uCloud'), s.cloud);
+        gl!.uniform1f(U('uCloudLight'), s.cloudLight); gl!.uniform4f(U('uMoon'), s.moon.x, s.moon.y, s.moon.k, s.moon.vis);
       }
       if (effect === 'gradient') {
         const c = th.colors.length >= 3 ? th.colors : [...th.colors, ...th.colors, ...th.colors].slice(0, 3);
