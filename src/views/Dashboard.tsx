@@ -13,6 +13,7 @@ import { Sleep } from './Sleep';
 import { Effectivity } from './Effectivity';
 import { DataCard } from './DataCard';
 import { CalendarCard, CalendarViewer } from './Calendar';
+import { RetroDoseSheet } from './RetroDose';
 import { Changelog } from './Changelog';
 
 export function Disclaimer(p: { onboarding?: boolean }) {
@@ -195,6 +196,7 @@ export function Dashboard() {
       <Disclaimer />
       <Changelog />
       <CalendarViewer />
+      <RetroDoseSheet />
 
       <Sheet open={sheetOpen.value} onClose={() => { sheetOpen.value = false; }} title="New dose">
         <h2 class="sheet-intro">Add another dose</h2>

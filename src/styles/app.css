@@ -374,3 +374,16 @@ input[type="time"]{background:var(--fill);color:var(--label);border:0;border-rad
 .cl-more summary{list-style:none;cursor:pointer;padding:0 0 12px 20px;font-weight:600}
 .cl-more summary::-webkit-details-marker{display:none}
 .cl-more[open] summary{padding-bottom:12px}
+
+/* ---------- Past doses (sheet above the full-screen calendar) ---------- */
+.overlay.top{z-index:230}
+.cal-detail-item{position:relative}
+.cal-detail-item+.cal-detail-item::before,.cal-detail .add-row::before{content:"";position:absolute;top:0;left:76px;right:0;height:1px;transform:scaleY(.5);background:var(--sep)}
+button.cal-detail-row{width:100%;text-align:left}
+button.cal-detail-row::before{display:none}
+.cal-detail-actions{display:flex;justify-content:flex-end;padding:0 16px 12px 76px}
+.retro-card{padding:4px 0}
+.retro-dose{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.retro-pill{flex:0 0 64px;width:64px}
+.retro-edit{display:grid;gap:4px;padding:0 16px 14px}
+.foot.warn{color:#ff9f0a}

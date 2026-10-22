@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { actionOpen, calendarOpen, sheetOpen, toast } from '../state';
+import { actionOpen, calendarOpen, retroDay, sheetOpen, toast } from '../state';
 
 export interface SegOption<T extends string> { v: T; label: ComponentChildren; sub?: string }
 
@@ -32,31 +32,38 @@ export function Switch(p: { id: string; checked: boolean; onChange: (v: boolean)
 const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 export const prefersReducedMotion = () => reduce;
 
+/** Page scroll stays locked while any overlay is open, even when they stack. */
+let locks = 0;
+const lock = () => { if (locks++ === 0) document.body.style.overflow = 'hidden'; };
+const unlock = () => { locks = Math.max(0, locks - 1); if (locks === 0) document.body.style.overflow = ''; };
+
 /** Keeps an overlay mounted while its close animation plays. */
 export function useOverlay(open: boolean) {
   const [mounted, setMounted] = useState(open);
   const [shown, setShown] = useState(false);
+  const locked = useRef(false);
   useEffect(() => {
     if (open) {
       setMounted(true);
-      document.body.style.overflow = 'hidden';
+      if (!locked.current) { lock(); locked.current = true; }
       const r = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
       return () => cancelAnimationFrame(r);
     }
     setShown(false);
-    const t = setTimeout(() => { setMounted(false); document.body.style.overflow = ''; }, reduce ? 0 : 420);
+    const t = setTimeout(() => { setMounted(false); if (locked.current) { unlock(); locked.current = false; } }, reduce ? 0 : 420);
     return () => clearTimeout(t);
   }, [open]);
+  useEffect(() => () => { if (locked.current) { unlock(); locked.current = false; } }, []);
   return { mounted, shown };
 }
 
-export function Sheet(p: { open: boolean; onClose: () => void; title: string; children: ComponentChildren }) {
+export function Sheet(p: { open: boolean; onClose: () => void; title: string; children: ComponentChildren; top?: boolean }) {
   const { mounted, shown } = useOverlay(p.open);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { if (p.open && ref.current) ref.current.scrollTop = 0; }, [p.open]);
   if (!mounted) return null;
   return (
-    <div class={'overlay' + (shown ? ' open' : '')}>
+    <div class={'overlay' + (p.top ? ' top' : '') + (shown ? ' open' : '')}>
       <div class="backdrop" onClick={p.onClose} />
       <div class="sheet" ref={ref} role="dialog" aria-modal="true" aria-label={p.title}>
         <div class="sheet-head">
@@ -98,7 +105,7 @@ export function Toast() {
 /** Escape closes whichever overlay is open. */
 export function useEscape() {
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (sheetOpen.value) sheetOpen.value = false; else if (actionOpen.value) actionOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
+    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (retroDay.value !== null) retroDay.value = null; else if (sheetOpen.value) sheetOpen.value = false; else if (actionOpen.value) actionOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, []);

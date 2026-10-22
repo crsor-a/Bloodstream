@@ -5,7 +5,7 @@ import {
 } from '../lib/calendar';
 import { fmtMg, pillSVG } from '../lib/pill';
 import { fmtTime } from '../lib/time';
-import { calendarOpen, doses, now } from '../state';
+import { calendarOpen, doses, now, removeDose, retroDay, showToast } from '../state';
 import { Segmented, useOverlay } from '../components/controls';
 import type { Dose } from '../model/types';
 
@@ -155,20 +155,40 @@ export function CalendarCard() {
 /* ---------------- full-screen viewer ---------------- */
 function DayDetail({ ts, ctx }: { ts: number; ctx: Ctx }) {
   const list = ctx.byDay.get(dayKey(ts)) ?? [];
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [armed, setArmed] = useState(false);
+  useEffect(() => { setOpenId(null); setArmed(false); }, [ts]);
+  const canAdd = startOfDay(ts) <= startOfDay(ctx.now);
   return (
     <div class="card cal-detail">
       <div class="cal-detail-head">
         <b>{new Date(ts).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</b>
         <span>{list.length ? `${list.length} dose${list.length > 1 ? 's' : ''}` : 'No doses'}</span>
       </div>
-      {list.length === 0 && <p class="cal-empty">Nothing was logged on this day.</p>}
+      {list.length === 0 && <p class="cal-empty">{canAdd ? 'Nothing was logged on this day yet.' : 'Nothing is planned for this day.'}</p>}
       {list.map(d => (
-        <div class="cal-detail-row" key={d.id}>
-          <div class="mini-pill" dangerouslySetInnerHTML={{ __html: pillSVG(d, { glow: false }) }} />
-          <div class="dose-info"><b>{d.kind} · {fmtMg(d.mg)} mg{d.at > ctx.now && <span class="tag">Planned</span>}</b><span class="sub">{fmtTime(d.at)}</span></div>
-          <Dot d={d} ctx={ctx} size={10} />
+        <div class="cal-detail-item" key={d.id}>
+          <button type="button" class="cal-detail-row" aria-expanded={openId === d.id} onClick={() => { setOpenId(openId === d.id ? null : d.id); setArmed(false); }}>
+            <div class="mini-pill" dangerouslySetInnerHTML={{ __html: pillSVG(d, { glow: false }) }} />
+            <div class="dose-info"><b>{d.kind} · {fmtMg(d.mg)} mg{d.at > ctx.now && <span class="tag">Planned</span>}</b><span class="sub">{fmtTime(d.at)}</span></div>
+            <Dot d={d} ctx={ctx} size={10} />
+          </button>
+          {openId === d.id && (
+            <div class="cal-detail-actions">
+              <button type="button" class="btn-text danger" onClick={() => {
+                if (!armed) { setArmed(true); return; }
+                removeDose(d.id); setOpenId(null); setArmed(false); showToast('Dose removed');
+              }}>{armed ? 'Tap again to remove' : 'Remove dose'}</button>
+            </div>
+          )}
         </div>
       ))}
+      {canAdd && (
+        <button type="button" class="add-row" onClick={() => { retroDay.value = startOfDay(ts); }}>
+          <span class="plus"><span><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg></span></span>
+          {startOfDay(ts) === startOfDay(ctx.now) ? 'Add an earlier dose today' : 'Add a dose on this day'}
+        </button>
+      )}
     </div>
   );
 }

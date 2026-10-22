@@ -1,5 +1,5 @@
 import { batch, computed, signal } from '@preact/signals';
-import { Regimen } from './model/regimen';
+import { Regimen, TRACK_WINDOW } from './model/regimen';
 import type { Band } from './model/pk';
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type Dose, type PillLook, type Profile, type Settings } from './model/types';
 import { migrateLegacy, newId, openStore, type Snapshot, type Store } from './lib/storage';
@@ -23,6 +23,8 @@ export const flight = signal<{ rect: DOMRect; look: PillLook } | null>(null);
 export const entering = signal(false);
 export const sheetOpen = signal(false);
 export const actionOpen = signal(false);
+/** Past-dose sheet over the full-screen calendar: start of the chosen day, or null. */
+export const retroDay = signal<number | null>(null);
 /** Full-screen calendar viewer: null = closed. */
 export const calendarOpen = signal<{ scale: import('./lib/calendar').Scale; anchor: number; selected: number | null } | null>(null);
 export const toast = signal<{ text: string; id: number } | null>(null);
@@ -80,16 +82,20 @@ export async function requestPersist() {
 /* ---------------- actions ---------------- */
 function saveSettings(next: Settings) { settings.value = next; store.putSettings(next); }
 function setDoses(next: Dose[]) { doses.value = [...next].sort((a, b) => a.at - b.at); }
-/** Keep a dose visible if it is moved/added before the last "Start over". */
-function keepVisible(at: number) { if (at <= settings.value.resetAt) saveSettings({ ...settings.value, resetAt: at - 1 }); }
+/** Keep a dose visible if it is moved/added before the last "Start over". Doses older than the
+ *  tracking window never affect the curve, so they leave the reset point alone. */
+function keepVisible(at: number) {
+  if (at <= settings.value.resetAt && at > Date.now() - TRACK_WINDOW) saveSettings({ ...settings.value, resetAt: at - 1 });
+}
 
 export type NewDose = Omit<Dose, 'id' | 'created'>;
-export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: boolean } = {}): Dose {
+/** `remember: false` (past doses) leaves the dose form's defaults alone. */
+export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: boolean; remember?: boolean } = {}): Dose {
   const d: Dose = { ...input, id: newId(), created: Date.now(), colors: { L: input.colors.L, R: input.mode === 'whole' ? input.colors.L : input.colors.R } };
   batch(() => {
     keepVisible(d.at);
     setDoses([...doses.value, d]);
-    saveSettings({ ...settings.value, seen: true, last: { kind: d.kind, mg: d.mg, shape: d.shape, mode: d.mode, colors: { ...input.colors }, shapeTouched: !!opts.shapeTouched } });
+    saveSettings({ ...settings.value, seen: true, last: opts.remember === false ? settings.value.last : { kind: d.kind, mg: d.mg, shape: d.shape, mode: d.mode, colors: { ...input.colors }, shapeTouched: !!opts.shapeTouched } });
     if (opts.band && opts.band !== profile.value.band) { profile.value = { band: opts.band }; store.putProfile(profile.value); }
     now.value = Date.now();
   });

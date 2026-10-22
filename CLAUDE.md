@@ -139,6 +139,11 @@ Sources:
   color-coded per kind+mg (TYPE_PALETTE) when there is more than one. Planned doses are hollow.
   Uses the full history (not the 72 h model window).
 - Sleep card header reads "<Band> interference"; the gauge shows only the percentage.
+- Past doses: in the full-screen calendar, a selected day up to today shows "Add a dose on this
+  day". The sheet (`views/RetroDose.tsx`, layered above the viewer) pre-fills kind/mg/look from
+  the most recent taken dose; the user sets the time (future times are blocked). Saved with
+  `addDose(..., { remember: false })` so the normal form defaults don't change. Doses within the
+  72 h window feed the curve automatically. Day-detail rows expand to a two-tap Remove.
 
 ## Roadmap ideas (not built yet)
 

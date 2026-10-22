@@ -94,3 +94,17 @@ export function shortTime(ts: number): string {
   const d = new Date(ts), h = d.getHours(), m = d.getMinutes();
   return `${h % 12 || 12}${m ? ':' + pad(m) : ''}${h < 12 ? 'a' : 'p'}`;
 }
+
+/** A clock time ("HH:MM") on a given local day. */
+export function atOnDay(day: number, hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date(day); d.setHours(h || 0, m || 0, 0, 0);
+  return d.getTime();
+}
+
+/** The latest dose that has actually been taken (ignores planned ones). */
+export function mostRecentTaken(doses: Dose[], now: number): Dose | undefined {
+  let best: Dose | undefined;
+  for (const d of doses) if (d.at <= now && (!best || d.at > best.at)) best = d;
+  return best;
+}

@@ -49,3 +49,31 @@ describe('calendar helpers', () => {
     expect(shortTime(new Date(2026, 9, 21, 13, 30).getTime())).toBe('1:30p');
   });
 });
+
+describe('past doses', () => {
+  it('places a clock time on the chosen day', async () => {
+    const { atOnDay } = await import('../src/lib/calendar');
+    const t = atOnDay(new Date(2026, 9, 14).getTime(), '07:45');
+    expect(new Date(t).getDate()).toBe(14);
+    expect(new Date(t).getHours()).toBe(7);
+    expect(new Date(t).getMinutes()).toBe(45);
+  });
+  it('pre-fills from the most recent dose that was actually taken', async () => {
+    const { mostRecentTaken } = await import('../src/lib/calendar');
+    const now = day(2026, 9, 21, 12);
+    const list = [dose('XR', 20, day(2026, 9, 20)), dose('IR', 10, day(2026, 9, 21, 9)), dose('XR', 25, day(2026, 9, 22))];
+    expect(mostRecentTaken(list, now)?.mg).toBe(10);
+    expect(mostRecentTaken([], now)).toBeUndefined();
+  });
+});
+
+describe('mg formatting', () => {
+  it('keeps half-milligram strengths and rounds the rest', async () => {
+    const { fmtMg } = await import('../src/lib/pill');
+    expect(fmtMg(12.5)).toBe('12.5');
+    expect(fmtMg(7.5)).toBe('7.5');
+    expect(fmtMg(20)).toBe('20');
+    expect(fmtMg(16.3)).toBe('16');
+    expect(fmtMg(4.26)).toBe('4.3');
+  });
+});

@@ -14,9 +14,18 @@ export type ChangeType = 'new' | 'improved' | 'fixed';
 export interface Change { type: ChangeType; text: string }
 export interface Release { version: string; date: string; title: string; changes: Change[] }
 
-export const APP_VERSION = '3.1.0';
+export const APP_VERSION = '3.2.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '3.2.0', date: '2026-10-21', title: 'Past doses',
+    changes: [
+      { type: 'new', text: 'Add a dose to any earlier day from the full-screen calendar. It fills in your most recent dose, so you only set the time, and it works for days before you started using Bloodstream.' },
+      { type: 'new', text: 'Doses from the last few days that are still in your system are added to your curve, sleep and effectivity right away.' },
+      { type: 'new', text: 'Tap a dose in the calendar\'s day details to remove it.' },
+      { type: 'fixed', text: '12.5 mg doses no longer show as 13 mg.' }
+    ]
+  },
   {
     version: '3.1.0', date: '2026-10-21', title: 'Dose calendar',
     changes: [

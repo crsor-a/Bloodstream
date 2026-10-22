@@ -77,6 +77,11 @@ export function applyFade(root: Element | null, shape: Shape, r: number) {
 export const COLORS: [string, string][] = [['White', '#f4f3ef'], ['Clear', 'clear'], ['Sky', '#9ccbff'], ['Blue', '#4a8cf0'], ['Peach', '#ffc196'], ['Orange', '#ff8f3a'],
   ['Yellow', '#ffd95e'], ['Pink', '#ff9fc6'], ['Mint', '#8fe3b3'], ['Lilac', '#bba9ff'], ['Gray', '#9b9ba3']];
 export const DOSE_PRESETS = { IR: [5, 7.5, 10, 12.5, 15, 20, 30], XR: [5, 10, 15, 20, 25, 30] } as const;
-export const fmtMg = (v: number) => v >= 10 ? String(Math.round(v)) : String(Math.round(v * 10) / 10);
+/** 12.5 stays 12.5 (real dose strengths); other values over 10 round to whole mg. */
+export const fmtMg = (v: number) => {
+  if (v < 10) return String(Math.round(v * 10) / 10);
+  const half = Math.round(v * 2) / 2;
+  return Math.abs(v - half) < 0.05 && half % 1 !== 0 ? String(half) : String(Math.round(v));
+};
 export const pct = (v: number) => Math.round(Math.max(0, v) * 100) + '%';
 export const shapeName = (s: Shape) => s === 'capsule' ? 'capsule' : 'tablet';
