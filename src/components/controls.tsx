@@ -57,13 +57,13 @@ export function useOverlay(open: boolean) {
   return { mounted, shown };
 }
 
-export function Sheet(p: { open: boolean; onClose: () => void; title: string; children: ComponentChildren; top?: boolean }) {
+export function Sheet(p: { open: boolean; onClose: () => void; title: string; children: ComponentChildren; top?: boolean; cls?: string }) {
   const { mounted, shown } = useOverlay(p.open);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { if (p.open && ref.current) ref.current.scrollTop = 0; }, [p.open]);
   if (!mounted) return null;
   return (
-    <div class={'overlay' + (p.top ? ' top' : '') + (shown ? ' open' : '')}>
+    <div class={'overlay' + (p.top ? ' top' : '') + (p.cls ? ' ' + p.cls : '') + (shown ? ' open' : '')}>
       <div class="backdrop" onClick={p.onClose} />
       <div class="sheet" ref={ref} role="dialog" aria-modal="true" aria-label={p.title}>
         <div class="sheet-head">

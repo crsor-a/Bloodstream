@@ -11,8 +11,8 @@ describe('storage', () => {
     expect(store.kind).toBe('indexeddb');
     const d = sanitizeDose({ kind: 'XR', mg: 20, at: 1_700_000_000_000 })!;
     await store.putDose(d);
-    await store.putProfile({ band: 'teen' });
-    await store.putSettings({ sleep: '22:30', resetAt: 0, seen: true, seenVersion: null, last: null });
+    await store.putProfile({ band: 'teen', name: '' });
+    await store.putSettings(sanitizeSettings({ sleep: '22:30', seen: true }));
     const snap = await store.load();
     expect(snap.doses.map(x => x.id)).toContain(d.id);
     expect(snap.profile.band).toBe('teen');
@@ -27,7 +27,7 @@ describe('storage', () => {
   });
   it('exports and re-imports a backup', () => {
     const d = sanitizeDose({ kind: 'XR', mg: 25, at: 123 })!;
-    const text = makeBackup({ doses: [d], profile: { band: 'adult' }, settings: { sleep: '23:00', resetAt: 0, seen: true, seenVersion: null, last: null } });
+    const text = makeBackup({ doses: [d], profile: { band: 'adult', name: '' }, settings: sanitizeSettings({ sleep: '23:00', seen: true }), meds: [], schedules: [], logs: [], appointments: [] });
     const back = parseBackup(text);
     expect(back.doses[0]).toMatchObject({ kind: 'XR', mg: 25, at: 123 });
     expect(() => parseBackup('{"hello":1}')).toThrow(/isn't a Bloodstream backup/);
@@ -71,11 +71,11 @@ describe('updating the app keeps saved data', () => {
     expect(snap.doses.some(x => x.id === d.id && x.mg === 10)).toBe(true);
     expect(snap.settings.sleep).toBe('21:45');
   });
-  it('the database stays on schema version 1 (no upgrade that could clear stores)', async () => {
+  it('the database is on schema version 2 with every store present', async () => {
     await openStore();
     const db = await openDB('bloodstream');
-    expect(db.version).toBe(1);
-    expect([...db.objectStoreNames].sort()).toEqual(['doses', 'kv']);
+    expect(db.version).toBe(2);
+    expect([...db.objectStoreNames].sort()).toEqual(['appointments', 'doses', 'kv', 'logs', 'meds', 'schedules']);
     db.close();
   });
 });

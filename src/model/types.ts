@@ -18,9 +18,72 @@ export interface Dose extends PillLook {
   at: number;
   /** Epoch ms when the record was created. */
   created: number;
+  /** Saved medication this dose came from, if any. */
+  medId?: string;
+  /** Schedule slot this dose fulfils, if any. */
+  scheduleId?: string;
 }
 
-export interface Profile { band: Band }
+/** A saved medication ("Morning XR"): one tap to log it. */
+export interface Med extends PillLook {
+  id: string;
+  name: string;
+  kind: Kind;
+  mg: number;
+  created: number;
+}
+
+/** An intended time for a saved medication on chosen weekdays (0 = Sunday). */
+export interface Schedule {
+  id: string;
+  medId: string;
+  time: string;
+  days: number[];
+  reminder: boolean;
+  created: number;
+}
+
+export type LogType = 'effect' | 'benefit' | 'question' | 'concern';
+/** How urgently an entry should reach a prescriber. Mirrors the FDA Medication Guide's wording. */
+export type Urgency = 'info' | 'mention' | 'soon' | 'stop' | 'emergency';
+
+/** A doctor-logging entry: something to bring up at the next appointment. */
+export interface LogEntry {
+  id: string;
+  type: LogType;
+  category: string;
+  /** Suggestion this entry was built from, or null for a custom entry. */
+  templateId: string | null;
+  title: string;
+  details: string;
+  priority: boolean;
+  created: number;
+}
+
+export interface Appointment {
+  id: string;
+  at: number;
+  doctor: string;
+  visit: string;
+  notes: string;
+  reviewed: boolean;
+  created: number;
+}
+
+export type EffectId = 'none' | 'sky' | 'aurora' | 'rain' | 'snow' | 'nebula' | 'gradient' | 'solid';
+export interface Theme {
+  effect: EffectId;
+  /** Colors for the gradient / solid effects. */
+  colors: string[];
+  /** 0..1, how much the background is dimmed behind content. */
+  dim: number;
+  motion: boolean;
+  location: { lat: number; lon: number; label: string } | null;
+}
+
+export type AdjustPhase = 'adjusting' | 'settled' | 'unsure';
+
+export interface Profile { band: Band; name: string }
 
 export interface Settings {
   /** Planned bedtime, "HH:MM". */
@@ -32,10 +95,25 @@ export interface Settings {
   seenVersion: string | null;
   /** Last-used form values, so the next dose form starts where you left off. */
   last: (PillLook & { kind: Kind; mg: number; shapeTouched: boolean }) | null;
+  logging: { enabled: boolean; phase: AdjustPhase | null };
+  /** 0 = off, -1 = until turned off, otherwise epoch ms when it ends. */
+  incognitoUntil: number;
+  theme: Theme;
+  reminders: { enabled: boolean; lead: number; discreet: boolean };
+  /** Schedule slots the user skipped: "scheduleId|YYYY-MM-DD" → when skipped. */
+  skips: Record<string, number>;
+  /** One-time v4 setup tour for people who used Bloodstream before 4.0. */
+  setupV4: 'pending' | 'done' | 'dismissed';
 }
 
 export const SHAPES: Shape[] = ['capsule', 'round', 'oval'];
 export const isShape = (s: unknown): s is Shape => SHAPES.includes(s as Shape);
+export const EFFECTS: EffectId[] = ['none', 'sky', 'aurora', 'rain', 'snow', 'nebula', 'gradient', 'solid'];
 
-export const DEFAULT_SETTINGS: Settings = { sleep: '23:00', resetAt: 0, seen: false, seenVersion: null, last: null };
-export const DEFAULT_PROFILE: Profile = { band: 'adult' };
+export const DEFAULT_THEME: Theme = { effect: 'none', colors: ['#1a2a6c', '#b21f1f', '#fdbb2d'], dim: 0.35, motion: true, location: null };
+export const DEFAULT_SETTINGS: Settings = {
+  sleep: '23:00', resetAt: 0, seen: false, seenVersion: null, last: null,
+  logging: { enabled: false, phase: null }, incognitoUntil: 0, theme: DEFAULT_THEME,
+  reminders: { enabled: false, lead: 10, discreet: true }, skips: {}, setupV4: 'pending'
+};
+export const DEFAULT_PROFILE: Profile = { band: 'adult', name: '' };

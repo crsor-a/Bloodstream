@@ -27,7 +27,7 @@ export default defineConfig({
           { src: 'icons/drop-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,png,webmanifest}'], cleanupOutdatedCaches: true, clientsClaim: true, skipWaiting: true }
+      workbox: { globPatterns: ['**/*.{js,css,html,png,webmanifest}'], cleanupOutdatedCaches: true, clientsClaim: true, skipWaiting: true, importScripts: ['sw-notify.js'] }
     })
   ],
   build: { target: 'es2020', cssMinify: true },

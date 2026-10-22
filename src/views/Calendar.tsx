@@ -5,22 +5,25 @@ import {
 } from '../lib/calendar';
 import { fmtMg, pillSVG } from '../lib/pill';
 import { fmtTime } from '../lib/time';
-import { calendarOpen, doses, now, removeDose, retroDay, showToast } from '../state';
+import { appointments, calendarOpen, doses, meds, now, removeDose, retroDay, schedules, showToast } from '../state';
+import { slotsOnDay } from '../model/schedule';
 import { Segmented, useOverlay } from '../components/controls';
-import type { Dose } from '../model/types';
+import type { Appointment, Dose } from '../model/types';
 
 const SCALES: { v: Scale; label: string }[] = [{ v: 'week', label: 'Week' }, { v: 'month', label: 'Month' }, { v: 'year', label: 'Year' }];
 const WEEKDAY = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-interface Ctx { byDay: Map<string, Dose[]>; color: (d: Dose) => string; today: string; now: number }
+interface Ctx { byDay: Map<string, Dose[]>; appts: Map<string, Appointment[]>; color: (d: Dose) => string; today: string; now: number }
 
 function useCalendarData(): { ctx: Ctx; types: DoseType[] } {
-  const all = doses.value, t = now.value;
+  const all = doses.value, t = now.value, ap = appointments.value;
   return useMemo(() => {
     const types = doseTypes(all);
     const colors = new Map(types.map(x => [x.key, x.color]));
-    return { types, ctx: { byDay: groupByDay(all), color: (d: Dose) => colors.get(typeKey(d)) ?? '#ffffff', today: dayKey(t), now: t } };
-  }, [all, dayKey(t)]);
+    const appts = new Map<string, Appointment[]>();
+    for (const a of ap) { const k = dayKey(a.at); appts.set(k, [...(appts.get(k) ?? []), a]); }
+    return { types, ctx: { byDay: groupByDay(all), appts, color: (d: Dose) => colors.get(typeKey(d)) ?? '#ffffff', today: dayKey(t), now: t } };
+  }, [all, ap, dayKey(t)]);
 }
 
 function Dot({ d, ctx, size }: { d: Dose; ctx: Ctx; size?: number }) {
@@ -46,6 +49,7 @@ function MonthGrid(p: { anchor: number; ctx: Ctx; selected: string | null; onPic
             <span class="cal-dots">
               {list?.slice(0, max).map(d => <Dot key={d.id} d={d} ctx={p.ctx} />)}
               {list && list.length > max && <em class="cal-more">+{list.length - max}</em>}
+              {p.ctx.appts.has(k) && <i class="cal-appt" aria-label="Appointment" />}
             </span>
           </button>
         );
@@ -66,6 +70,7 @@ function WeekGrid(p: { anchor: number; ctx: Ctx; selected: string | null; onPick
             <span class="cal-num">{new Date(ts).getDate()}</span>
             <span class="cal-wlist">
               {list.map(d => <span class="cal-wdose" key={d.id}><Dot d={d} ctx={p.ctx} /><em>{shortTime(d.at)}</em>{p.big && <small>{d.kind} {fmtMg(d.mg)}</small>}</span>)}
+              {(p.ctx.appts.get(k) ?? []).map(a => <span class="cal-wdose" key={a.id}><i class="cal-appt" /><em>{shortTime(a.at)}</em>{p.big && <small>Appt</small>}</span>)}
             </span>
           </button>
         );
@@ -91,7 +96,7 @@ function YearGrid(p: { anchor: number; ctx: Ctx; onMonth: (ts: number) => void; 
                 if (!c.inMonth) return <i key={c.ts} class="mc empty" />;
                 const k = dayKey(c.ts), list = p.ctx.byDay.get(k);
                 const d = list?.[0];
-                return <i key={c.ts} class={'mc' + (d ? ' on' : '') + (list && list.length > 1 ? ' multi' : '') + (k === p.ctx.today ? ' today' : '')}
+                return <i key={c.ts} class={'mc' + (d ? ' on' : '') + (list && list.length > 1 ? ' multi' : '') + (k === p.ctx.today ? ' today' : '') + (p.ctx.appts.has(k) ? ' appt' : '')}
                   style={d ? { background: p.ctx.color(d), color: p.ctx.color(d) } : undefined} />;
               })}
             </span>
@@ -103,12 +108,15 @@ function YearGrid(p: { anchor: number; ctx: Ctx; onMonth: (ts: number) => void; 
 }
 
 function Legend({ types }: { types: DoseType[] }) {
-  if (!types.length) return <p class="cal-legend-note">Logged doses show up here as dots.</p>;
-  if (types.length === 1) return <div class="cal-legend"><span><i class="cal-dot" style={{ background: '#ffffff', borderColor: '#ffffff' }} />All doses: {types[0].kind} {fmtMg(types[0].mg)} mg</span></div>;
+  const hasAppt = appointments.value.some(a => a.at > now.value - 86_400_000);
+  const appt = hasAppt ? <span><i class="cal-appt" />Appointment</span> : null;
+  if (!types.length) return hasAppt ? <div class="cal-legend">{appt}</div> : <p class="cal-legend-note">Logged doses show up here as dots.</p>;
+  if (types.length === 1) return <div class="cal-legend"><span><i class="cal-dot" style={{ background: '#ffffff', borderColor: '#ffffff' }} />All doses: {types[0].kind} {fmtMg(types[0].mg)} mg</span>{appt}</div>;
   return (
     <div class="cal-legend">
       {types.map(t => <span key={t.key}><i class="cal-dot" style={{ background: t.color, borderColor: t.color }} />{t.kind} {fmtMg(t.mg)} mg</span>)}
       <span><i class="cal-dot planned" style={{ borderColor: 'rgba(235,235,245,.6)' }} />Planned</span>
+      {appt}
     </div>
   );
 }
@@ -159,13 +167,29 @@ function DayDetail({ ts, ctx }: { ts: number; ctx: Ctx }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => { setOpenId(null); setArmed(false); }, [ts]);
   const canAdd = startOfDay(ts) <= startOfDay(ctx.now);
+  const future = startOfDay(ts) > startOfDay(ctx.now);
+  const planned = future ? slotsOnDay(ts, schedules.value, meds.value) : [];
+  const appts = ctx.appts.get(dayKey(ts)) ?? [];
   return (
     <div class="card cal-detail">
       <div class="cal-detail-head">
         <b>{new Date(ts).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</b>
-        <span>{list.length ? `${list.length} dose${list.length > 1 ? 's' : ''}` : 'No doses'}</span>
+        <span>{list.length ? `${list.length} dose${list.length > 1 ? 's' : ''}` : future && planned.length ? `${planned.length} scheduled` : 'No doses'}</span>
       </div>
-      {list.length === 0 && <p class="cal-empty">{canAdd ? 'Nothing was logged on this day yet.' : 'Nothing is planned for this day.'}</p>}
+      {appts.map(a => (
+        <div class="cal-detail-row static" key={a.id}>
+          <span class="appt-badge" aria-hidden="true"><i class="cal-appt" /></span>
+          <div class="dose-info"><b>Appointment{a.visit ? ` · ${a.visit}` : ''}</b><span class="sub">{fmtTime(a.at)}{a.doctor ? ` · ${a.doctor}` : ''}</span></div>
+        </div>
+      ))}
+      {planned.length > 0 && <p class="cal-sched-head">Scheduled</p>}
+      {planned.map(sl => (
+        <div class="cal-detail-row static" key={sl.key}>
+          <div class="mini-pill faded" dangerouslySetInnerHTML={{ __html: pillSVG(sl.med, { glow: false }) }} />
+          <div class="dose-info"><b>Scheduled: {sl.med.name}</b><span class="sub">{fmtTime(sl.at)} · {sl.med.kind} {fmtMg(sl.med.mg)} mg</span></div>
+        </div>
+      ))}
+      {list.length === 0 && !planned.length && !appts.length && <p class="cal-empty">{canAdd ? 'Nothing was logged on this day yet.' : 'Nothing is planned for this day.'}</p>}
       {list.map(d => (
         <div class="cal-detail-item" key={d.id}>
           <button type="button" class="cal-detail-row" aria-expanded={openId === d.id} onClick={() => { setOpenId(openId === d.id ? null : d.id); setArmed(false); }}>

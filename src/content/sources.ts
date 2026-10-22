@@ -1,0 +1,42 @@
+import type { Source } from './types';
+
+const s = (t: string, u: string): Source => ({ t, u });
+
+export const SRC = {
+  FDA_XR: s('FDA prescribing information and Medication Guide: Adderall XR (2023)', 'https://www.accessdata.fda.gov/drugsatfda_docs/label/2023/021303s038lbl.pdf'),
+  FDA_IR: s('FDA prescribing information: Adderall tablets', 'https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/011522s042lbl.pdf'),
+  FDA_2023: s('FDA: Updating warnings to improve safe use of prescription stimulants (2023)', 'https://www.fda.gov/drugs/drug-safety-communications/fda-updating-warnings-improve-safe-use-prescription-stimulants-used-treat-adhd-and-other-conditions'),
+  HC_MONO: s('Health Canada product monograph: Adderall XR (food-effect data)', 'https://pdf.hres.ca/dpd_pm/00032076.PDF'),
+  MEDLINE: s('MedlinePlus: Dextroamphetamine and amphetamine', 'https://medlineplus.gov/druginfo/meds/a601234.html'),
+  CDC_TX: s('CDC: Treatment of ADHD', 'https://www.cdc.gov/adhd/treatment/'),
+  NIMH: s('NIMH: Attention-Deficit/Hyperactivity Disorder', 'https://www.nimh.nih.gov/health/topics/attention-deficit-hyperactivity-disorder-adhd'),
+  NHS_TX: s('NHS: ADHD treatment', 'https://www.nhs.uk/conditions/attention-deficit-hyperactivity-disorder-adhd/treatment/'),
+  AAP: s('American Academy of Pediatrics: ADHD clinical practice guideline (2019)', 'https://publications.aap.org/pediatrics/article/144/4/e20192528/81590/'),
+  KELTY: s('Kelty Mental Health, BC Children\'s Hospital: Managing stimulant medications', 'https://keltymentalhealth.ca/sites/default/files/resources/ManagingStimulantMedications_2022.pdf'),
+  CHC_APPETITE: s('Children\'s Health Council: Strategies for appetite loss on stimulant medication', 'https://www.chconline.org/resourcelibrary/7-strategies-to-manage-appetite-loss-while-taking-stimulant-medication-for-adhd/'),
+  COCHRANE_TICS: s('Cochrane Review: ADHD medication in children with tic disorders (2018)', 'https://www.cochrane.org/CD007990'),
+  NEJM_PSYCH: s('Moran et al., Psychosis with methylphenidate or amphetamine, NEJM (2019)', 'https://www.nejm.org/doi/full/10.1056/NEJMoa1813751'),
+  SHAW: s('Shaw et al., Emotion dysregulation in ADHD, American Journal of Psychiatry (2014)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4282137/'),
+  TIME: s('ADHD Evidence: Time-perception differences are a consistent feature of ADHD (2022 meta-analysis)', 'https://adhdevidence.org/blog/time-blindness-found-to-be-a-consistent-feature-of-adhd'),
+  WMT: s('Melby-Lervåg & Hulme, Is working memory training effective? A meta-analytic review (2013)', 'https://pubmed.ncbi.nlm.nih.gov/22612437/'),
+  COWAN: s('Cowan, The magical number 4 in short-term memory (2001)', 'https://pubmed.ncbi.nlm.nih.gov/11515286/'),
+  EXERCISE: s('Frontiers in Neuroscience (2023): Physical exercise and ADHD', 'https://www.frontiersin.org/journals/neuroscience/articles/10.3389/fnins.2023.1139263/full'),
+  CHADD: s('CHADD: Children and Adults with ADHD', 'https://chadd.org/'),
+  CHADD_TIME: s('CHADD: Which time-management strategies work best for you?', 'https://chadd.org/adhd-in-the-news/which-time-management-strategies-work-best-for-you/'),
+  FDA_CAFFEINE: s('FDA: Spilling the beans: how much caffeine is too much?', 'https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much'),
+  NIAAA: s('NIAAA: Harmful interactions: mixing alcohol with medicines', 'https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/harmful-interactions-mixing-alcohol-with-medicines'),
+  AHA_BP: s('American Heart Association: Understanding blood pressure readings', 'https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings'),
+  AHA_HA: s('American Heart Association: Warning signs of a heart attack', 'https://www.heart.org/en/health-topics/heart-attack/warning-signs-of-a-heart-attack'),
+  STROKE: s('American Stroke Association: Stroke symptoms (BE FAST)', 'https://www.stroke.org/en/about-stroke/stroke-symptoms'),
+  LIFELINE: s('988 Suicide & Crisis Lifeline', 'https://988lifeline.org/'),
+  POISON: s('Poison Control: 1-800-222-1222', 'https://www.poison.org/'),
+  SEROTONIN: s('MedlinePlus: Serotonin syndrome', 'https://medlineplus.gov/ency/article/007272.htm'),
+  RAYNAUD: s('MedlinePlus: Raynaud phenomenon', 'https://medlineplus.gov/ency/article/000412.htm'),
+  NIDCR: s('National Institute of Dental and Craniofacial Research: Dry mouth', 'https://www.nidcr.nih.gov/health-info/dry-mouth'),
+  NHLBI_SLEEP: s('NHLBI: Sleep deprivation and deficiency', 'https://www.nhlbi.nih.gov/health/sleep-deprivation'),
+  FDA_DISPOSAL: s('FDA: Disposal of unused medicines', 'https://www.fda.gov/drugs/safe-disposal-medicines/disposal-unused-medicines-what-you-should-know'),
+  DEA_TAKEBACK: s('DEA: Prescription Drug Take Back Day', 'https://www.dea.gov/takebackday'),
+  SAMHSA: s('SAMHSA National Helpline: 1-800-662-4357', 'https://www.samhsa.gov/find-help/national-helpline'),
+  MEDWATCH: s('FDA MedWatch: report a problem with a medicine', 'https://www.fda.gov/safety/medwatch-fda-safety-information-and-adverse-event-reporting-program'),
+  FDA_SHORTAGE: s('FDA Drug Shortages database', 'https://www.accessdata.fda.gov/scripts/drugshortages/')
+};
