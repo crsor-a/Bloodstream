@@ -7,7 +7,7 @@ import {
 } from './model/types';
 import { migrateLegacy, newId, openStore, type Coll, type CollItem, type Snapshot, type Store } from './lib/storage';
 import { attentionSlots, pruneSkips, type Slot } from './model/schedule';
-import { APP_VERSION, CHANGELOG } from './changelog';
+import { APP_VERSION } from './changelog';
 
 /* ---------------- data signals ---------------- */
 export const now = signal(Date.now());
@@ -95,7 +95,7 @@ export async function boot() {
     const returning = snap.doses.length > 0 || snap.settings.seen;
     if (returning) {
       whatsNew.value = true;
-      setTimeout(() => showToast(`Updated to ${APP_VERSION}: ${CHANGELOG[0].title.toLowerCase()}`), 1200);
+      setTimeout(() => showToast(`Updated to Bloodstream ${APP_VERSION}`), 1200);
     } else saveSettings({ ...settings.value, seenVersion: APP_VERSION });
   }
   const pruned = pruneSkips(settings.value.skips, Date.now());
