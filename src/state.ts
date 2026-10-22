@@ -1,9 +1,8 @@
 import { batch, computed, signal } from '@preact/signals';
-import { Regimen, TRACK_WINDOW } from './model/regimen';
+import { Regimen } from './model/regimen';
 import type { Band } from './model/pk';
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type Dose, type PillLook, type Profile, type Settings } from './model/types';
 import { migrateLegacy, newId, openStore, type Snapshot, type Store } from './lib/storage';
-import { DAY } from './lib/time';
 import { APP_VERSION, CHANGELOG } from './changelog';
 
 /* ---------------- signals ---------------- */
@@ -15,14 +14,13 @@ export const storeKind = signal<Store['kind']>('memory');
 export const persisted = signal<boolean | null>(null);
 export const view = signal<'loading' | 'onboard' | 'dash'>('loading');
 
-export const regimen = computed(() => new Regimen(doses.value, profile.value.band, now.value, settings.value.resetAt));
+export const regimen = computed(() => new Regimen(doses.value, profile.value.band, now.value));
 
 /** UI coordination */
 export const sweepToken = signal(0);           // bump to replay the pill fade sweep
 export const flight = signal<{ rect: DOMRect; look: PillLook } | null>(null);
 export const entering = signal(false);
 export const sheetOpen = signal(false);
-export const actionOpen = signal(false);
 /** Past-dose sheet over the full-screen calendar: start of the chosen day, or null. */
 export const retroDay = signal<number | null>(null);
 /** Full-screen calendar viewer: null = closed. */
@@ -40,7 +38,8 @@ export function showToast(text: string) {
 }
 
 /* ---------------- boot + clock ---------------- */
-const hasRecent = () => regimen.value.doses.some(d => d.at > Date.now() - DAY);
+/** Onboarding is only for the first visit: once a dose has ever been logged, open the dashboard. */
+const onboarded = () => doses.value.length > 0 || settings.value.seen;
 
 export async function boot() {
   store = await openStore();
@@ -53,7 +52,7 @@ export async function boot() {
     settings.value = snap.settings;
     now.value = Date.now();
   });
-  view.value = hasRecent() ? 'dash' : 'onboard';
+  view.value = onboarded() ? 'dash' : 'onboard';
   if (settings.value.seenVersion !== APP_VERSION) {
     const returning = snap.doses.length > 0 || snap.settings.seen;
     if (returning) {
@@ -64,10 +63,7 @@ export async function boot() {
   if (view.value === 'dash') sweepToken.value++;
   checkPersisted();
 
-  const tick = () => {
-    now.value = Date.now();
-    if (view.value === 'dash' && regimen.value.empty) view.value = 'onboard';
-  };
+  const tick = () => { now.value = Date.now(); };
   setInterval(tick, 15_000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 }
@@ -82,18 +78,12 @@ export async function requestPersist() {
 /* ---------------- actions ---------------- */
 function saveSettings(next: Settings) { settings.value = next; store.putSettings(next); }
 function setDoses(next: Dose[]) { doses.value = [...next].sort((a, b) => a.at - b.at); }
-/** Keep a dose visible if it is moved/added before the last "Start over". Doses older than the
- *  tracking window never affect the curve, so they leave the reset point alone. */
-function keepVisible(at: number) {
-  if (at <= settings.value.resetAt && at > Date.now() - TRACK_WINDOW) saveSettings({ ...settings.value, resetAt: at - 1 });
-}
 
 export type NewDose = Omit<Dose, 'id' | 'created'>;
 /** `remember: false` (past doses) leaves the dose form's defaults alone. */
 export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: boolean; remember?: boolean } = {}): Dose {
   const d: Dose = { ...input, id: newId(), created: Date.now(), colors: { L: input.colors.L, R: input.mode === 'whole' ? input.colors.L : input.colors.R } };
   batch(() => {
-    keepVisible(d.at);
     setDoses([...doses.value, d]);
     saveSettings({ ...settings.value, seen: true, last: opts.remember === false ? settings.value.last : { kind: d.kind, mg: d.mg, shape: d.shape, mode: d.mode, colors: { ...input.colors }, shapeTouched: !!opts.shapeTouched } });
     if (opts.band && opts.band !== profile.value.band) { profile.value = { band: opts.band }; store.putProfile(profile.value); }
@@ -106,7 +96,7 @@ export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: bool
 export function setDoseTime(id: string, at: number) {
   const d = doses.value.find(x => x.id === id); if (!d) return;
   const next = { ...d, at };
-  batch(() => { keepVisible(at); setDoses(doses.value.map(x => x.id === id ? next : x)); now.value = Date.now(); });
+  batch(() => { setDoses(doses.value.map(x => x.id === id ? next : x)); now.value = Date.now(); });
   store.putDose(next);
 }
 export function removeDose(id: string) {
@@ -114,16 +104,10 @@ export function removeDose(id: string) {
   store.deleteDose(id);
   now.value = Date.now();
 }
-/** Stop tracking what's on screen. Past doses stay in history; planned ones are dropped. */
-export function startOver() {
-  const t = Date.now();
-  const planned = doses.value.filter(d => d.at > t);
-  planned.forEach(d => store.deleteDose(d.id));
-  batch(() => {
-    setDoses(doses.value.filter(d => d.at <= t));
-    saveSettings({ ...settings.value, resetAt: t });
-    view.value = 'onboard';
-  });
+export function setBand(band: Band) {
+  if (band === profile.value.band) return;
+  profile.value = { band };
+  store.putProfile(profile.value);
 }
 export function markVersionSeen() {
   if (settings.value.seenVersion === APP_VERSION) return;
@@ -143,9 +127,9 @@ export async function importSnapshot(snap: Snapshot): Promise<number> {
   batch(() => {
     setDoses(merged);
     profile.value = snap.profile; store.putProfile(snap.profile);
-    saveSettings({ ...snap.settings, seen: true, resetAt: Math.min(settings.value.resetAt || Infinity, snap.settings.resetAt || 0) });
+    saveSettings({ ...snap.settings, seen: true, resetAt: 0 });
     now.value = Date.now();
-    if (hasRecent()) view.value = 'dash';
+    view.value = 'dash';
   });
   return added;
 }
@@ -154,7 +138,8 @@ export async function deleteEverything() {
   batch(() => {
     doses.value = [];
     profile.value = DEFAULT_PROFILE;
-    settings.value = { ...DEFAULT_SETTINGS, seen: true };
+    // A full wipe is a fresh start, so the first-visit onboarding comes back.
+    settings.value = { ...DEFAULT_SETTINGS, seenVersion: APP_VERSION };
     view.value = 'onboard';
   });
   store.putSettings(settings.value);

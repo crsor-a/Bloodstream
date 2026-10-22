@@ -14,9 +14,18 @@ export type ChangeType = 'new' | 'improved' | 'fixed';
 export interface Change { type: ChangeType; text: string }
 export interface Release { version: string; date: string; title: string; changes: Change[] }
 
-export const APP_VERSION = '3.2.0';
+export const APP_VERSION = '3.3.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '3.3.0', date: '2026-10-21', title: 'Simpler start',
+    changes: [
+      { type: 'improved', text: 'The welcome screens only appear on your first visit. After that, Bloodstream always opens to your dashboard.' },
+      { type: 'improved', text: 'Removed the restart button. To erase everything, use Delete all data in Your data.' },
+      { type: 'new', text: 'Change your age group anytime in Your data.' },
+      { type: 'new', text: 'When nothing has been taken in the last few days, the dashboard says so and offers Log a dose, with your calendar still in reach.' }
+    ]
+  },
   {
     version: '3.2.0', date: '2026-10-21', title: 'Past doses',
     changes: [

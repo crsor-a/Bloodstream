@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { actionOpen, calendarOpen, retroDay, sheetOpen, toast } from '../state';
+import { calendarOpen, retroDay, sheetOpen, toast } from '../state';
 
 export interface SegOption<T extends string> { v: T; label: ComponentChildren; sub?: string }
 
@@ -78,23 +78,6 @@ export function Sheet(p: { open: boolean; onClose: () => void; title: string; ch
   );
 }
 
-export function ActionSheet(p: { open: boolean; onClose: () => void; title: string; actions: { label: string; danger?: boolean; onClick: () => void }[] }) {
-  const { mounted, shown } = useOverlay(p.open);
-  if (!mounted) return null;
-  return (
-    <div class={'overlay' + (shown ? ' open' : '')}>
-      <div class="backdrop" onClick={p.onClose} />
-      <div class="action" role="dialog" aria-modal="true" aria-label={p.title}>
-        <div class="action-group">
-          <p class="action-title">{p.title}</p>
-          {p.actions.map(a => <button key={a.label} class={'action-btn' + (a.danger ? ' danger' : '')} type="button" onClick={a.onClick}>{a.label}</button>)}
-        </div>
-        <button class="action-btn cancel" type="button" onClick={p.onClose}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
 export function Toast() {
   const t = toast.value;
   const [last, setLast] = useState('');
@@ -105,7 +88,7 @@ export function Toast() {
 /** Escape closes whichever overlay is open. */
 export function useEscape() {
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (retroDay.value !== null) retroDay.value = null; else if (sheetOpen.value) sheetOpen.value = false; else if (actionOpen.value) actionOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
+    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (retroDay.value !== null) retroDay.value = null; else if (sheetOpen.value) sheetOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, []);

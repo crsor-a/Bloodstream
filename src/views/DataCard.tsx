@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { backupFileName, makeBackup, parseBackup } from '../lib/storage';
-import { deleteEverything, doses, importSnapshot, persisted, requestPersist, showToast, snapshot, storeKind } from '../state';
+import { deleteEverything, doses, importSnapshot, persisted, profile, requestPersist, setBand, showToast, snapshot, storeKind } from '../state';
+import { Segmented } from '../components/controls';
 
 async function exportBackup() {
   const text = makeBackup(snapshot());
@@ -46,10 +47,17 @@ export function DataCard() {
           <button type="button" class={'status-dot' + (safe ? ' ok' : '')} onClick={() => requestPersist()}
             title={safe ? 'The browser has agreed not to clear this data on its own' : 'Ask the browser to keep this data'}>{safe ? 'Protected' : 'Protect'}</button>
         </div>
+        <div class="data-row">
+          <span class="row-label">Age group</span>
+          <Segmented label="Age group" value={profile.value.band} onChange={b => { setBand(b); showToast('Age group updated'); }}
+            options={[{ v: 'child', label: '6 to 12' }, { v: 'teen', label: '13 to 17' }, { v: 'adult', label: '18+' }]} />
+          <p class="foot">Sets how quickly your body clears each dose.</p>
+        </div>
         <button type="button" class="list-btn" onClick={exportBackup}><span>Export backup</span><span class="chev" aria-hidden="true" /></button>
         <button type="button" class="list-btn" onClick={() => fileRef.current?.click()}><span>Import backup</span><span class="chev" aria-hidden="true" /></button>
         <button type="button" class="list-btn danger" onClick={() => { if (armed) { setArmed(false); deleteEverything(); } else setArmed(true); }}>
           <span>{armed ? 'Tap again to delete everything' : 'Delete all data'}</span>
+          {!armed && <small>Erases history and settings</small>}
         </button>
         <input ref={fileRef} class="visually-hidden" type="file" accept="application/json,.json" onChange={onFile} aria-label="Choose a Bloodstream backup file" />
       </div>

@@ -121,7 +121,8 @@ Sources:
 - iPhone notes: the Home Screen app has its own storage, separate from Safari, and is exempt
   from Safari's 7-day script-storage cap while it is being used. Deleting the icon deletes its
   data, hence the backup feature. `navigator.storage.persist()` is requested after the first dose.
-- "Start over" sets `settings.resetAt`: earlier doses leave the model but stay in history.
+- There is no restart button. Full resets go through Your data > Delete all data, which also
+  brings back first-visit onboarding. `settings.resetAt` is legacy (old Start over) and ignored.
 
 ## Behaviors worth knowing
 
@@ -133,7 +134,10 @@ Sources:
 - Time correction (Doses list → Edit) only saves times that already happened; it resolves to
   the past occurrence nearest the dose's current time (`resolvePast`).
 - The plus button opens a sheet with the same form to add a stacked dose.
-- The dashboard skips onboarding while any tracked dose is within the last 24 h.
+- Onboarding only appears on first entry (until the first dose is ever logged) or after Delete all
+  data. Otherwise the app opens to the dashboard; with nothing taken in 72 h it shows an idle hero
+  ("Your bloodstream is clear", Log a dose) plus the calendar and data sections.
+- Age group lives in onboarding and in Your data (segmented control, `setBand`).
 - Dose calendar: week / month / year on the dashboard, Expand opens a full-screen viewer with
   day details and range stats. Dots are white when every logged dose is the same kind+mg, and
   color-coded per kind+mg (TYPE_PALETTE) when there is more than one. Planned doses are hollow.

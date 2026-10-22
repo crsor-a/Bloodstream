@@ -25,7 +25,7 @@ export interface Profile { band: Band }
 export interface Settings {
   /** Planned bedtime, "HH:MM". */
   sleep: string;
-  /** Doses before this time are kept in history but no longer tracked ("Start over"). */
+  /** Legacy (removed "Start over" button). Kept so older saved data still loads; no longer applied. */
   resetAt: number;
   seen: boolean;
   /** Newest changelog version the user has seen (null = never). */

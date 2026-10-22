@@ -3,9 +3,11 @@ import { applyFade, fmtMg, pct, pillSVG, shapeName } from '../lib/pill';
 import { dayWord, fmtTime, fmtWhen, rel } from '../lib/time';
 import { DIRECTION, feelPhrase } from '../model/copy';
 import {
-  actionOpen, addDose, entering, flight, now, regimen, setDoseTime, sheetOpen, showToast, startOver, sweepToken
+  addDose, doses, entering, flight, now, regimen, setDoseTime, settings, sheetOpen, showToast, sweepToken
 } from '../state';
-import { ActionSheet, prefersReducedMotion, Sheet } from '../components/controls';
+import { prefersReducedMotion, Sheet } from '../components/controls';
+import { mostRecentTaken } from '../lib/calendar';
+import type { PillLook } from '../model/types';
 import { DoseForm } from './DoseForm';
 import { DoseList } from './DoseList';
 import { Curve } from './Curve';
@@ -28,9 +30,6 @@ function TopBar() {
         <span class="clock">{fmtTime(now.value)}</span>
         <button class="icon-btn" type="button" aria-label="Add another dose" title="Add another dose" onClick={() => { sheetOpen.value = true; }}>
           <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-        </button>
-        <button class="icon-btn" id="restartBtn" type="button" aria-label="Start over" title="Start over" onClick={() => { actionOpen.value = true; }}>
-          <svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" /><path d="M3 3.5v5h5" /></svg>
         </button>
       </div>
     </header>
@@ -172,6 +171,27 @@ function Method() {
   );
 }
 
+const IDLE_LOOK: PillLook = { shape: 'capsule', mode: 'whole', colors: { L: '#ff8f3a', R: '#ff8f3a' } };
+
+/** Shown when nothing has been taken in the last 72 hours: no curve to draw yet. */
+function IdleHero() {
+  const t = now.value;
+  const last = mostRecentTaken(doses.value, t);
+  const look = last ?? settings.value.last ?? IDLE_LOOK;
+  const when = last ? new Date(last.at).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + fmtTime(last.at) : '';
+  return (
+    <section class="hero">
+      <div class="hero-pill idle" role="img" aria-label="No dose being tracked" dangerouslySetInnerHTML={{ __html: pillSVG(look) }} />
+      <div class="dose-chip">Nothing tracked right now</div>
+      <h1 class="headline">Your bloodstream is <span class="num">clear</span>.</h1>
+      <p class="subline">{last
+        ? `Your last logged dose was ${last.kind} ${fmtMg(last.mg)} mg on ${when}, and it has cleared your system. Log a dose to see its curve.`
+        : 'Log a dose to see where it is in your bloodstream.'}</p>
+      <button class="btn primary capsule" type="button" onClick={() => { sheetOpen.value = true; }}>Log a dose</button>
+    </section>
+  );
+}
+
 export function Dashboard() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   const addFromSheet = (r: Parameters<Parameters<typeof DoseForm>[0]['onSubmit']>[0]) => {
@@ -180,17 +200,13 @@ export function Dashboard() {
     sweepToken.value++;
     showToast(d.at > Date.now() + 60_000 ? `Planned ${d.kind} ${fmtMg(d.mg)} mg for ${fmtWhen(d.at, true)}` : `Added ${d.kind} ${fmtMg(d.mg)} mg at ${fmtTime(d.at)}`);
   };
-  if (regimen.value.empty) return null;
+  const idle = regimen.value.empty;
   return (
     <main id="dash" class={entering.value ? 'entering' : ''}>
       <TopBar />
-      <Hero />
-      <Stats />
-      <DoseList />
+      {idle ? <IdleHero /> : <><Hero /><Stats /><DoseList /></>}
       <CalendarCard />
-      <Curve />
-      <Sleep />
-      <Effectivity />
+      {!idle && <><Curve /><Sleep /><Effectivity /></>}
       <DataCard />
       <Method />
       <Disclaimer />
@@ -199,13 +215,10 @@ export function Dashboard() {
       <RetroDoseSheet />
 
       <Sheet open={sheetOpen.value} onClose={() => { sheetOpen.value = false; }} title="New dose">
-        <h2 class="sheet-intro">Add another dose</h2>
-        <p class="sheet-sub">Log it just like your first one. Whatever is still in your system stacks with it, and the curve updates right away.</p>
+        <h2 class="sheet-intro">{idle ? 'Log a dose' : 'Add another dose'}</h2>
+        <p class="sheet-sub">{idle ? 'Pick the dose and the time you took it, or plan one for later.' : 'Log it just like your first one. Whatever is still in your system stacks with it, and the curve updates right away.'}</p>
         <DoseForm mode="sheet" onSubmit={addFromSheet} />
       </Sheet>
-      <ActionSheet open={actionOpen.value} onClose={() => { actionOpen.value = false; }}
-        title="Start over? Bloodstream stops tracking the doses on this screen. Past doses stay in your saved history and backups."
-        actions={[{ label: 'Stop tracking and start over', danger: true, onClick: () => { actionOpen.value = false; setTimeout(startOver, 300); } }]} />
     </main>
   );
 }
