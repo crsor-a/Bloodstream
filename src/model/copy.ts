@@ -156,3 +156,51 @@ export const EFFECT_GROUPS: { group: string; items: EffItem[] }[] = [
     { name: 'Sleep readiness', kind: 'sleep', value: c => 1 - c.I / 100, text: c => sleepText(c.I) }
   ] }
 ];
+
+/** Article id for each effectivity area (articles live in src/content/articles). */
+export const AREA_IDS: Record<string, string> = {
+  'Focus': 'area-focus', 'Getting started': 'area-start', 'Working memory': 'area-memory', 'Time awareness': 'area-time',
+  'Impulse control': 'area-impulse', 'Emotional steadiness': 'area-emotion', 'Calm body': 'area-calm', 'Conversation': 'area-social',
+  'Energy': 'area-energy', 'Appetite suppression': 'area-appetite', 'Physical stimulation': 'area-body', 'Sleep readiness': 'area-sleep'
+};
+export const effItemByArea = (area: string) => {
+  for (const g of EFFECT_GROUPS) for (const it of g.items) if (AREA_IDS[it.name] === area) return { group: g.group, item: it };
+  return null;
+};
+
+/* ---------------- greetings (dashboard header) ---------------- */
+export function greetingTitle(name: string, ts: number): string {
+  const h = new Date(ts).getHours();
+  const n = name.trim();
+  if (h >= 23 || h < 4) return n ? `Still up, ${n}?` : 'Still up?';
+  const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  return n ? `${part}, ${n}` : part;
+}
+
+/** One line under the greeting that follows the day's curve. */
+export function greetingLine(p: { phase: Phase | 'idle' | 'planned'; plannedAt?: string; hour: number }): string {
+  switch (p.phase) {
+    case 'idle': return p.hour < 12 ? 'Nothing in your system yet today.' : 'Nothing is being tracked right now.';
+    case 'planned': return `Your dose is planned for ${p.plannedAt}.`;
+    case 'pre': return 'Your next dose hasn\'t been taken yet.';
+    case 'onset': return 'Your dose is just kicking in.';
+    case 'build': return 'Building toward your best stretch.';
+    case 'peak': return 'You\'re in your strongest window.';
+    case 'plateau': return 'Holding steady.';
+    case 'taper': return 'Easing off. Wrap up the big stuff.';
+    case 'comedown': return 'Winding down. Go easy on yourself.';
+    case 'residual': return p.hour >= 18 ? 'Mostly worn off. Time to wind down.' : 'Mostly worn off.';
+  }
+}
+
+/** Incognito: neutral words with no medical meaning. */
+export function rhythmWord(e: number, rising: boolean): string {
+  if (e < 0.08) return 'Resting';
+  if (rising) return e < 0.4 ? 'Rising' : 'Building';
+  if (e >= 0.88) return 'High';
+  if (e >= 0.6) return 'Steady';
+  if (e >= 0.3) return 'Easing';
+  return 'Low';
+}
+
+export const DISCLAIMER = 'Bloodstream is made only for Adderall (mixed amphetamine salts, IR and XR) and its generic versions, for people keeping track of their ADHD treatment. Its curves, zones and articles are estimates built from published averages, not measurements of your body, and they can be wrong. It doesn\'t replace your doctor or pharmacist: check anything important with them, and never use Bloodstream to plan or change doses your prescriber hasn\'t approved.';

@@ -288,7 +288,7 @@ export function guidanceFor(s: Suggestion, type: LogType, covers: string[]): Gui
   };
   if (s.urgency === 'stop') return {
     tone: 'stop', title: 'Stop and call your prescriber',
-    body: `Based on this ${TYPE_NOUN[type]}, Bloodstream recommends you stop taking this medication until you've spoken with your prescriber, which matches the FDA Medication Guide. Watch for ${s.watch ?? 'worsening symptoms'}, and ${s.action ?? CALL_911}. An attached article in your logging library gives guidance and next steps.`
+    body: `Based on this ${TYPE_NOUN[type]}, Bloodstream recommends you stop taking this medication until you've spoken with your prescriber, and reach them today. The FDA label asks prescribers to reassess treatment when this happens. Watch for ${s.watch ?? 'worsening symptoms'}, and ${s.action ?? CALL_911}. The attached article in your logging library explains what to tell them.`
   };
   if (s.note) return { tone: s.urgency === 'soon' ? 'soon' : 'info', title: s.urgency === 'soon' ? 'Worth a call soon' : 'Worth reporting', body: `${s.note} The attached article covers ${list}. ${attach}` };
   if (s.urgency === 'soon') return {

@@ -42,13 +42,21 @@ export const addSlot = signal<Slot | null>(null);
 export const retroDay = signal<number | null>(null);
 /** Full-screen calendar viewer: null = closed. */
 export const calendarOpen = signal<{ scale: import('./lib/calendar').Scale; anchor: number; selected: number | null } | null>(null);
-export const logOpen = signal(false);
-export const libraryOpen = signal<null | { section: 'articles' | 'appointments' | 'entries' | null }>(null);
-export const reader = signal<null | { id: string }>(null);
+/** Doctor-logging entry sheet; `editId` edits an existing entry. */
+export const logSheet = signal<null | { editId?: string }>(null);
+export type LibrarySection = 'entries' | 'articles' | 'appointments';
+export const libraryOpen = signal<null | { section: LibrarySection }>(null);
+/** Appointment editor sheet: null closed, id null = new. */
+export const apptSheet = signal<null | { id: string | null }>(null);
+/** Article reader. `entryId` shows the linked log entry; `back` is the reading history. */
+export interface ReaderState { id: string; entryId?: string; back?: { id: string; entryId?: string }[] }
+export const reader = signal<ReaderState | null>(null);
 export const changelogOpen = signal(false);
 export const incognitoSheet = signal(false);
 /** Feature tours layered over the dashboard. */
 export const tour = signal<null | 'upgrade' | 'logging'>(null);
+/** Scroll target requested by a tour or banner (element id), consumed by the dashboard. */
+export const scrollTarget = signal<string | null>(null);
 export const toast = signal<{ text: string; id: number } | null>(null);
 /** True when this build has a changelog entry the user hasn't seen yet. */
 export const whatsNew = signal(false);

@@ -27,7 +27,8 @@ export type Block =
 
 export interface Source { t: string; u: string }
 
-export type Section = 'Safety' | 'Side effects' | 'Everyday' | 'Appointments' | 'Areas of functioning';
+export type Section = 'Safety' | 'Side effects' | 'Everyday' | 'With your prescriber' | 'Areas of functioning';
+export const SECTIONS: Section[] = ['Safety', 'Side effects', 'Everyday', 'With your prescriber', 'Areas of functioning'];
 
 export interface Article {
   id: string;

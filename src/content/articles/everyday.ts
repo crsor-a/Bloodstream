@@ -1,0 +1,153 @@
+import type { Article } from '../types';
+import { SRC } from '../sources';
+
+export const EVERYDAY: Article[] = [
+  {
+    id: 'timing', section: 'Everyday', read: 7,
+    title: 'How long it lasts: onset, peak and wear-off',
+    dek: 'IR and XR follow different curves, and plenty of everyday things nudge them around. How to read yours, and what to tell your prescriber when it feels off.',
+    covers: ['the typical curve for IR and XR', 'why it can feel different day to day', 'what to note for your prescriber'],
+    blocks: [
+      { k: 'p', t: 'Both forms of Adderall contain the same mix of amphetamine salts. The difference is how fast it gets into your bloodstream.' },
+      { k: 'h', t: 'Immediate release (IR) tablets' },
+      { k: 'v', v: { type: 'curve', kind: 'IR', show: 'both', hours: 14, marks: [{ h: 0, label: 'Dose' }, { h: 3, label: 'Peak ~3 h' }] }, cap: 'Blood level (solid) peaks about 3 hours after an IR dose. Felt effect (dashed) usually lasts about 4 to 6 hours, which is why IR is often taken two or three times a day.' },
+      { k: 'h', t: 'Extended release (XR) capsules' },
+      { k: 'v', v: { type: 'curve', kind: 'XR', show: 'both', hours: 20, marks: [{ h: 0, label: 'Dose' }, { h: 7, label: 'Peak ~7 h' }] }, cap: 'XR capsules hold two kinds of beads: half release right away and half a few hours later. The label notes that XR 20 mg once a day gives levels similar to IR 10 mg taken twice, four hours apart. Felt effect usually lasts about 8 to 12 hours.' },
+      { k: 'h', t: 'Why the same dose can feel different' },
+      { k: 'ul', items: [
+        '**Food.** A high-fat breakfast doesn\'t change how much XR you absorb, but it pushes the peak back by about two and a half hours.',
+        '**Acidity.** Vitamin C and juice can lower levels; antacids can raise and prolong them. The interactions article has the details.',
+        '**Sleep and stress.** A short night or a very stressful day can make a good dose feel weak.',
+        '**Illness and hydration.**',
+        '**Hormones.** Some people notice a difference across their menstrual cycle.',
+        '**A different manufacturer.** Generics must meet FDA standards, but some people notice a change when the pharmacy switches brands.'
+      ] },
+      { k: 'h', t: 'Opening XR capsules' },
+      { k: 'p', t: 'If swallowing capsules is hard, the label allows opening an XR capsule and sprinkling **all** of the beads on a spoonful of applesauce. Swallow it right away without chewing the beads, and don\'t save part of it for later or split the beads between doses. IR tablets should only be split if your pharmacist says that particular tablet can be.' },
+      { k: 'h', t: 'When it doesn\'t seem to work' },
+      { k: 'p', t: 'Before concluding the medication has stopped working, check the usual suspects above for a week. Then tell your prescriber what you noticed. Don\'t take extra to make up for a weak day: more medicine on top of a bad night\'s sleep usually means more side effects, not more focus.' },
+      { k: 'v', v: { type: 'check', title: 'Useful notes for your prescriber', items: [
+        'What time you took it and when you first noticed it working',
+        'When it started fading, and whether that\'s earlier or later than before',
+        'Breakfast that day, and how you slept the night before',
+        'Any new medicines, supplements or a change of pharmacy brand'
+      ] } }
+    ],
+    sources: [SRC.FDA_XR, SRC.FDA_IR, SRC.HC_MONO],
+    related: ['rebound', 'interactions', 'missed']
+  },
+
+  {
+    id: 'benefits', section: 'With your prescriber', read: 5,
+    title: 'Benefits worth reporting',
+    dek: 'Your prescriber needs to hear what\'s working, not only what isn\'t. And a few "benefits" are actually warning signs.',
+    covers: ['why benefits matter to your prescriber', 'benefits that are really warning signs', 'how to describe progress'],
+    blocks: [
+      { k: 'p', t: 'Finding the right dose is a balance. The goal is the most benefit with side effects you can live with. If you only ever report problems, your prescriber sees half the picture, and might lower a dose that\'s actually doing a lot for you.' },
+      { k: 'h', t: 'Good benefits to log' },
+      { k: 'ul', items: [
+        'Finishing things you used to abandon halfway',
+        'Better grades, work reviews or fewer missed deadlines',
+        'Fewer arguments at home, or better friendships',
+        'Driving more attentively',
+        'Less time lost looking for things, being late or forgetting appointments',
+        'Feeling calmer and less scattered, while still feeling like yourself'
+      ] },
+      { k: 'v', v: { type: 'compare',
+        a: { title: 'Healthy signs', items: ['Calmer, more organized', 'Steadier mood', 'Better follow-through', 'Still hungry at dinner, sleeping okay'] },
+        b: { title: 'Report these', items: ['Staying up all night working', 'Feeling high or euphoric', 'Weight loss you\'re happy about', 'Barely needing sleep, feeling unstoppable'] }
+      }, cap: 'The right column can feel good, but each one is a side effect or a warning sign, not a goal.' },
+      { k: 'h', t: 'Why those aren\'t wins' },
+      { k: 'p', t: 'Staying up all night means the medicine is still active at bedtime, and lost sleep wipes out much of the next day\'s benefit. Feeling high suggests more medicine than you need, and the FDA links chasing that feeling to misuse. Unintended weight loss is something the label asks prescribers to monitor. And needing little sleep while feeling unstoppable can be an early sign of mania.' },
+      { k: 'h', t: 'How to describe progress' },
+      { k: 'ol', items: [
+        'Use specific examples: "I finished my report two days early" beats "I\'m doing better."',
+        'Compare with before: what used to happen in the same situation?',
+        'Bring other perspectives: teacher notes, a partner\'s observations, report cards.',
+        'Mention the time of day: benefits that fade by mid-afternoon are useful information too.'
+      ] }
+    ],
+    sources: [SRC.FDA_XR, SRC.FDA_2023, SRC.AAP, SRC.CDC_TX],
+    related: ['appointments', 'sleep', 'psychosis']
+  },
+
+  {
+    id: 'appointments', section: 'With your prescriber', read: 8,
+    title: 'Getting the most from appointments',
+    dek: 'How dose adjustments usually work, what to bring, the questions worth asking, and how your logging library fits in.',
+    covers: ['how dose adjustments usually work', 'what to bring', 'questions worth asking', 'how long changes take to judge'],
+    blocks: [
+      { k: 'p', t: 'Appointments about ADHD medication are often short. Coming in with clear notes is the best way to make that time count, and it\'s the whole reason Bloodstream has a logging library.' },
+      { k: 'h', t: 'How adjustments usually work' },
+      { k: 'p', t: 'Prescribers usually start with a low dose and adjust in small steps, often about a week apart, watching for benefits and side effects at each step. The label describes this kind of gradual adjustment. Stimulants work the same day they\'re taken, so each step can be judged fairly quickly compared with medicines like antidepressants.' },
+      { k: 'v', v: { type: 'cycle', title: 'The adjustment loop', steps: ['Take it as prescribed', 'Notice effects and side effects', 'Log them in Bloodstream', 'Discuss at your appointment', 'Your prescriber adjusts or confirms'] }, cap: 'Bloodstream helps with the middle steps. Decisions about the dose stay between you and your prescriber.' },
+      { k: 'callout', tone: 'info', t: 'Bloodstream never suggests doses or changes. It records what you take and what you notice, so the conversation with your prescriber starts from facts.' },
+      { k: 'h', t: 'What to bring' },
+      { k: 'v', v: { type: 'check', title: 'Before the visit', items: [
+        'Your logging library, shared as a list from the Entries tab',
+        'Your usual dose times, and how consistent they\'ve been (the calendar shows this)',
+        'Home blood pressure readings, if you take them',
+        'Notes on sleep, appetite and mood',
+        'School reports, teacher notes or rating scales, for children',
+        'A list of every medicine and supplement you take'
+      ] } },
+      { k: 'h', t: 'Questions worth asking' },
+      { k: 'ul', items: [
+        'What should I expect from this dose, and how will we know it\'s right?',
+        'Which side effects should I call you about, rather than waiting?',
+        'Would a different time of day or release type suit my schedule better?',
+        'What\'s my cut-off time for a late dose?',
+        'Should I check my blood pressure or weight at home?',
+        'If this doesn\'t work well, what are the other options?'
+      ] },
+      { k: 'h', t: 'Other options exist' },
+      { k: 'p', t: 'If Adderall isn\'t a good fit, there are other stimulants, such as methylphenidate-based medicines, and non-stimulants such as atomoxetine, viloxazine, guanfacine and clonidine. Behavioral treatments, parent training for younger children, and skills-based therapy for adults also have good evidence, alone or alongside medication.' },
+      { k: 'h', t: 'Stopping' },
+      { k: 'p', t: 'Talk to your prescriber before stopping. Amphetamine doesn\'t usually cause dangerous withdrawal at prescribed doses, but the label notes that stopping suddenly after long-term high doses can cause extreme tiredness and low mood. Your ADHD symptoms will also come back, so it\'s good to plan for that.' },
+      { k: 'h', t: 'After the visit' },
+      { k: 'ul', items: [
+        'Clear the entries you covered from your library so the next list starts fresh.',
+        'If your dose or timing changed, update your saved medications and schedules in Bloodstream.',
+        'Add your next appointment so Bloodstream can remind you to start noting things a few weeks ahead.'
+      ] }
+    ],
+    sources: [SRC.FDA_XR, SRC.CDC_TX, SRC.NHS_TX, SRC.AAP],
+    related: ['benefits', 'timing', 'practical']
+  },
+
+  {
+    id: 'practical', section: 'Everyday', read: 8,
+    title: 'Refills, pharmacies and everyday logistics',
+    dek: 'Why refills work the way they do, what to do in a shortage, and how to handle travel, school, work, driving and drug tests.',
+    covers: ['refill rules for Schedule II medicines', 'what to do during a shortage', 'travel, school, work, driving and drug tests'],
+    blocks: [
+      { k: 'h', t: 'Why refills are strict' },
+      { k: 'p', t: 'Adderall is a Schedule II controlled substance in the US. Federal rules don\'t allow refills on Schedule II prescriptions: every fill needs a new prescription. Prescribers can, however, write several prescriptions at once covering up to a 90-day supply, each marked with the earliest date it can be filled. Pharmacies and insurers are also strict about filling early.' },
+      { k: 'v', v: { type: 'check', title: 'Making refills smoother', items: [
+        'Request a new prescription about a week before you run out',
+        'Ask whether multiple dated prescriptions are an option for you',
+        'Use one pharmacy, so your history is in one place',
+        'Call ahead to check they have your strength in stock'
+      ] } },
+      { k: 'h', t: 'During a shortage' },
+      { k: 'p', t: 'Stimulant shortages have come and gone in recent years. The FDA\'s Drug Shortages database shows current status. If your pharmacy is out, ask them to check other locations, or ask your prescriber whether a different strength or form would work in the meantime. Never buy from websites or people selling without a prescription: the FDA warns that counterfeit stimulants may contain fentanyl or methamphetamine.' },
+      { k: 'h', t: 'Generic switches' },
+      { k: 'p', t: 'Generic versions must meet FDA standards for being equivalent to the brand. Even so, some people notice a difference when the pharmacy changes manufacturers, especially with XR capsules. If you do, log it with the manufacturer name from the bottle, tell your prescriber, and consider reporting it to FDA MedWatch.' },
+      { k: 'h', t: 'Travel' },
+      { k: 'ul', items: [
+        'Keep it in your carry-on, in the original labeled bottle.',
+        'Pack enough for the trip plus a few extra days, since early refills are hard to get away from home.',
+        'Across time zones, keep taking it in your local morning. Ask your prescriber about the travel days.',
+        'Some countries ban or strictly limit amphetamine. Check with the destination\'s embassy before you go.'
+      ] },
+      { k: 'h', t: 'School and work' },
+      { k: 'p', t: 'Students with ADHD may qualify for support under Section 504 or an IEP, such as extra time, breaks or a quieter testing room. At work, the Job Accommodation Network (JAN) has free guidance on reasonable accommodations. You don\'t have to share which medicine you take to ask for support.' },
+      { k: 'h', t: 'Driving' },
+      { k: 'p', t: 'ADHD itself affects driving, and many people find they drive more attentively while their medicine is working. The label still advises care with driving and machinery until you know how the medicine affects you. Be extra careful in the comedown window and on short sleep.' },
+      { k: 'h', t: 'Drug tests' },
+      { k: 'p', t: 'Standard drug screens look for amphetamines, so a prescribed dose can show up. Tell the testing service you have a prescription. A reviewing doctor (often called a medical review officer) can verify it with your pharmacy, and you don\'t need to share your diagnosis with an employer.' }
+    ],
+    sources: [SRC.CFR_RX, SRC.FDA_SHORTAGE, SRC.FDA_2023, SRC.MEDWATCH, SRC.TSA, SRC.ED_504, SRC.JAN, SRC.FDA_XR],
+    related: ['safety', 'appointments', 'timing']
+  }
+];

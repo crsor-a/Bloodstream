@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks';
-import { fmtMg, pct, pillSVG } from '../lib/pill';
+import { pct, pillSVG } from '../lib/pill';
 import { fmtWhen, MIN, resolvePast, toHHMM } from '../lib/time';
 import { now, regimen, removeDose, setDoseTime, sheetOpen, showToast, sweepToken } from '../state';
 import type { Dose } from '../model/types';
+import { doseTitle } from '../lib/names';
 
 function Row(p: { d: Dose; open: boolean; onToggle: () => void; carried: boolean }) {
   const { d } = p;
@@ -30,7 +31,7 @@ function Row(p: { d: Dose; open: boolean; onToggle: () => void; carried: boolean
       <div class="dose-main">
         <div class="mini-pill" dangerouslySetInnerHTML={{ __html: pillSVG(d, { glow: false }) }} />
         <div class="dose-info">
-          <b>{d.kind} · {fmtMg(d.mg)} mg{p.carried ? <span class="tag">Carry-over</span> : planned ? <span class="tag">Planned</span> : null}</b>
+          <b>{doseTitle(d)}{p.carried ? <span class="tag">Carry-over</span> : planned ? <span class="tag">Planned</span> : d.scheduleId ? <span class="tag">Scheduled</span> : null}</b>
           <span class="sub">{planned ? `Planned · ${fmtWhen(d.at, false, t)} · not taken yet` : `${fmtWhen(d.at, false, t)} · ${pct(reg.doseRemaining(d, t))} left`}</span>
         </div>
         <button type="button" class="pill-btn" aria-expanded={p.open} onClick={() => { setArmed(false); setValue(toHHMM(planned ? Date.now() : d.at)); p.onToggle(); }}>{p.open ? 'Done' : 'Edit'}</button>

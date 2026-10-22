@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { calendarOpen, retroDay, sheetOpen, toast } from '../state';
+import { apptSheet, calendarOpen, changelogOpen, incognitoSheet, libraryOpen, logSheet, reader, retroDay, sheetOpen, toast, tour } from '../state';
 
 export interface SegOption<T extends string> { v: T; label: ComponentChildren; sub?: string }
 
@@ -88,7 +88,20 @@ export function Toast() {
 /** Escape closes whichever overlay is open. */
 export function useEscape() {
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key !== 'Escape') return; if (retroDay.value !== null) retroDay.value = null; else if (sheetOpen.value) sheetOpen.value = false; else if (calendarOpen.value) calendarOpen.value = null; };
+    // Closes the topmost layer first.
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (reader.value) reader.value = null;
+      else if (apptSheet.value) apptSheet.value = null;
+      else if (logSheet.value) logSheet.value = null;
+      else if (retroDay.value !== null) retroDay.value = null;
+      else if (incognitoSheet.value) incognitoSheet.value = false;
+      else if (sheetOpen.value) sheetOpen.value = false;
+      else if (tour.value) tour.value = null;
+      else if (libraryOpen.value) libraryOpen.value = null;
+      else if (changelogOpen.value) changelogOpen.value = false;
+      else if (calendarOpen.value) calendarOpen.value = null;
+    };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, []);

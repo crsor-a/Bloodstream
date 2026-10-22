@@ -13,3 +13,12 @@ export async function shareFile(name: string, text: string, type: string): Promi
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   return 'downloaded';
 }
+
+/** Shares plain text (share sheet), or copies it to the clipboard where sharing isn't available. */
+export async function shareText(title: string, text: string): Promise<'shared' | 'copied' | 'cancelled' | 'failed'> {
+  if (navigator.share) {
+    try { await navigator.share({ title, text }); return 'shared'; }
+    catch (e) { if ((e as Error).name === 'AbortError') return 'cancelled'; }
+  }
+  try { await navigator.clipboard.writeText(text); return 'copied'; } catch { return 'failed'; }
+}

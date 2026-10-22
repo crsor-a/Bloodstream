@@ -1,19 +1,26 @@
 import { render } from 'preact';
+import { useEffect } from 'preact/hooks';
 import { registerSW } from 'virtual:pwa-register';
 import './styles/app.css';
 import { boot, view } from './state';
 import { Onboarding } from './views/Onboarding';
 import { Dashboard } from './views/Dashboard';
 import { Toast, useEscape } from './components/controls';
+import { Background } from './components/Background';
+import { startReminderSync } from './views/DueCards';
 
 function App() {
   useEscape();
+  useEffect(() => startReminderSync(), []);
   return (
-    <div class="wrap">
-      {view.value === 'onboard' && <Onboarding />}
-      {view.value === 'dash' && <Dashboard />}
-      <Toast />
-    </div>
+    <>
+      {view.value === 'dash' && <Background />}
+      <div class="wrap">
+        {view.value === 'onboard' && <Onboarding />}
+        {view.value === 'dash' && <Dashboard />}
+        <Toast />
+      </div>
+    </>
   );
 }
 

@@ -9,7 +9,7 @@ const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const pad = (n: number) => String(n).padStart(2, '0');
 const local = (d: Date) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
 const utc = (d: Date) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
-const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 
 /** First occurrence of the schedule at or after `from`. */
 export function firstOccurrence(s: Schedule, from: number): Date {
@@ -46,4 +46,17 @@ export function buildICS(schedules: Schedule[], meds: Med[], opts: { lead: numbe
   }
   lines.push('END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';
+}
+
+/** A single appointment as a calendar event with a reminder the day before and an hour before. */
+export function buildAppointmentICS(a: { id: string; at: number; doctor: string; visit: string; notes: string }, now = Date.now()): string {
+  const start = new Date(a.at), end = new Date(a.at + 30 * 60_000);
+  const title = a.visit ? `Appointment: ${a.visit}` : 'Appointment';
+  const desc = [a.doctor && `With ${a.doctor}`, a.notes, 'Review your logging library in Bloodstream before you go.'].filter(Boolean).join('\n');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Bloodstream//Appointments//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', `UID:${a.id}@bloodstream-appt`, `DTSTAMP:${utc(new Date(now))}`, `DTSTART:${local(start)}`, `DTEND:${local(end)}`,
+    `SUMMARY:${esc(title)}`, `DESCRIPTION:${esc(desc)}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(title)}`, 'TRIGGER:-P1D', 'END:VALARM',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(title)}`, 'TRIGGER:-PT1H', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n';
 }
