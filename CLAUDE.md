@@ -7,9 +7,6 @@ functioning. Version 4 adds saved medications and schedules, doctor logging with
 articles, appointments, incognito mode and living backgrounds.
 Owner: Rauf (crsor-a). Primary device: iPhone, installed to the Home Screen.
 
-New session? Read `docs/HANDOFF.md` first: release history, Rauf's standing instructions,
-the reasoning behind past decisions, and the QA workflow (`scripts/qa/`).
-
 ## Commands
 
 - `npm run dev` start the dev server

@@ -3,5 +3,3 @@ dist
 dev-dist
 *.log
 .DS_Store
-qa-out
-__pycache__
