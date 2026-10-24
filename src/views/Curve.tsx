@@ -1,10 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { fmtMg, pct } from '../lib/pill';
 import { dayWord, fmtTime, fmtWhen, HOUR, MIN, rel } from '../lib/time';
-import { now, regimen } from '../state';
+import { now, personalizeOpen, physio, regimen } from '../state';
+import { CONC_CV } from '../model/physio';
 
 const H = 230, PL = 40, PR = 14, PT = 22, PB = 26, N = 480;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+const fmtNg = (v: number) => (v < 10 ? (Math.round(v * 10) / 10).toFixed(1) : String(Math.round(v)));
+const listJoin = (xs: string[]) => xs.length < 3 ? xs.join(' and ') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1];
+
+/**
+ * Estimated total (d + l) amphetamine concentration, with a likely range that covers both the
+ * clearance range and the label's ~25% between-person variability in exposure.
+ */
+function ngRange(reg: import('../model/regimen').Regimen, ts: number) {
+  const mid = reg.ngAt(ts);
+  const [hLo, hHi] = reg.phys.hlRange;
+  const lo = Math.min(mid, reg.ngAt(ts, hLo)) * (1 - CONC_CV);
+  const hi = Math.max(mid, reg.ngAt(ts, hHi)) * (1 + CONC_CV);
+  return mid < 0.05 ? null : { mid, lo, hi };
+}
 
 export function Curve() {
   const reg = regimen.value, t = now.value;
@@ -24,10 +40,16 @@ export function Curve() {
   const g = useMemo(() => {
     const [a, b] = reg.domain(t);
     const kt = reg.keyTimes(t);
-    const Ls: number[] = [], Es: number[] = [];
-    let maxL = 0;
-    for (let i = 0; i <= N; i++) { const ts = a + i * (b - a) / N, l = reg.levelAt(ts); Ls.push(l); Es.push(reg.effectAt(ts)); if (l > maxL) maxL = l; }
-    const yMax = Math.max(1.1, maxL * 1.1);
+    const [hLo, hHi] = reg.phys.hlRange;
+    const Ls: number[] = [], Es: number[] = [], Lo: number[] = [], Hi: number[] = [];
+    let maxL = 0, maxHi = 0;
+    for (let i = 0; i <= N; i++) {
+      const ts = a + i * (b - a) / N, l = reg.levelAt(ts), lo = reg.levelAt(ts, hLo), hi = reg.levelAt(ts, hHi);
+      Ls.push(l); Es.push(reg.effectAt(ts)); Lo.push(Math.min(lo, l)); Hi.push(Math.max(hi, l));
+      if (l > maxL) maxL = l;
+      if (hi > maxHi) maxHi = hi;
+    }
+    const yMax = Math.max(1.1, maxL * 1.1, maxHi * 1.03);
     const X = (ts: number) => PL + (ts - a) / (b - a) * (W - PL - PR);
     const Y = (v: number) => PT + (1 - v / yMax) * (H - PT - PB);
     let dL = '', dE = '';
@@ -37,6 +59,11 @@ export function Curve() {
       dE += (i ? 'L' : 'M') + x + ',' + Y(Es[i]).toFixed(1);
     }
     const area = dL + `L${X(b).toFixed(1)},${Y(0).toFixed(1)}L${X(a).toFixed(1)},${Y(0).toFixed(1)}Z`;
+    // Typical range: the same doses with faster and slower clearance (model/physio.ts hlRange).
+    let rng = '';
+    for (let i = 0; i <= N; i++) rng += (i ? 'L' : 'M') + X(a + i * (b - a) / N).toFixed(1) + ',' + Y(Hi[i]).toFixed(1);
+    for (let i = N; i >= 0; i--) rng += 'L' + X(a + i * (b - a) / N).toFixed(1) + ',' + Y(Lo[i]).toFixed(1);
+    rng += 'Z';
 
     const gstep = yMax > 1.7 ? 0.5 : 0.25;
     const grid: number[] = []; for (let v = gstep; v < yMax - 0.04; v += gstep) grid.push(v);
@@ -63,7 +90,7 @@ export function Curve() {
       marks.push({ x, row, end: x > W - 60, label: `${ds.kind} ${fmtMg(ds.mg)}${ds.at > t ? ' · planned' : ''}` });
     }
     const peak = kt.peakAt >= a && kt.peakAt <= b ? { x: X(kt.peakAt), y: Y(reg.levelAt(kt.peakAt)) } : null;
-    return { a, b, X, Y, dL, dE, area, grid, ticks, marks, peak };
+    return { a, b, X, Y, dL, dE, area, rng, grid, ticks, marks, peak };
   }, [reg, W]);
 
   const ts = clamp(dot ?? t, g.a, g.b);
@@ -76,6 +103,9 @@ export function Curve() {
     setDot(clamp(g.a + (e.clientX - r.left - PL) / (W - PL - PR) * (g.b - g.a), g.a, g.b));
   };
   const r = rel(ts, t), w = dayWord(ts, t);
+  const ph = physio.value;
+  const ng = taken ? ngRange(reg, ts) : null;
+  const modeled = ph.factors.filter(f => f.modeled).map(f => f.title.charAt(0).toLowerCase() + f.title.slice(1));
 
   return (
     <section class="dsec reveal" style={{ '--d': 7 } as any} aria-labelledby="hCurve">
@@ -106,6 +136,7 @@ export function Curve() {
             <line class="g-base" x1={PL} x2={W - PR} y1={g.Y(0)} y2={g.Y(0)} />
             {g.ticks.map(k => <g key={k.x}><line class="g-tick" x1={k.x} x2={k.x} y1={g.Y(0)} y2={g.Y(0) + 4} /><text class="g-lbl" x={k.x} y={H - 6} text-anchor="middle">{k.label}</text></g>)}
             <path d={g.area} fill="url(#gArea)" />
+            <path class="g-range" d={g.rng} />
             <path class="g-eff" d={g.dE} />
             <path class="g-line" d={g.dL} />
             {g.marks.map(m => <g key={m.x + m.label}>
@@ -119,9 +150,17 @@ export function Curve() {
             <circle cx={dx} cy={dy} r="7.5" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
           </svg>
         </div>
-        <div class="legend"><span><i class="lg-solid" />Blood level, % of one dose's peak</span><span><i class="lg-dash" />Estimated felt effect</span></div>
+        <div class="legend"><span><i class="lg-solid" />Blood level, % of one dose's peak</span><span><i class="lg-dash" />Estimated felt effect</span><span><i class="lg-range" />Typical range</span></div>
+        <div class="ng-line" aria-live="off">
+          <span>{ng ? <>About <b class="num">{fmtNg(ng.mid)} ng/mL</b> of amphetamine in plasma</> : 'No amphetamine from logged doses at this time'}</span>
+          {ng && <small>range {fmtNg(ng.lo)}–{fmtNg(ng.hi)} ng/mL</small>}
+        </div>
       </div>
-      <p class="foot pad">Drag the dot to scrub through the day. Arrow keys move it 10 minutes.</p>
+      <p class="foot pad">Drag the dot to scrub through the day. Arrow keys move it 10 minutes. The shaded range shows how much people's clearance normally differs. There is no target level: people respond differently to the same amount.</p>
+      <p class="foot pad pz-caption">{modeled.length
+        ? <>Personalized for {listJoin(modeled)}. </>
+        : <>Fitted to label averages for your age group. </>}
+        <button type="button" class="u-link" onClick={() => { personalizeOpen.value = true; }}>{ph.factors.length ? 'Body & medicines' : 'Personalize'}</button></p>
     </section>
   );
 }

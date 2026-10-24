@@ -12,7 +12,7 @@ import {
 } from '../state';
 import { Segmented, Sheet, Switch } from '../components/controls';
 import { AppearanceRows, KindDoseRows, PillPreview, useMedDraft } from '../components/PillEditor';
-import { DoseForm, initialDraft, type FormResult } from './DoseForm';
+import { DoseForm, initialDraft, MealRow, type FormResult } from './DoseForm';
 import { Disclaimer } from './Header';
 
 type Page =
@@ -105,7 +105,8 @@ function OtherTime({ med, go }: { med: Med; go: (p: Page) => void }) {
   const ts = at.getTime();
   const future = ts > Date.now() + MIN;
   const slot = slotFor(med, ts);
-  const submit = () => { takeMed(med, ts, slot?.schedule.id); logged(med, ts); };
+  const [meal, setMeal] = useState(false);
+  const submit = () => { takeMed(med, ts, slot?.schedule.id, meal); logged(med, ts); };
   return (
     <div>
       <Back onClick={() => go({ name: 'home' })} />
@@ -126,7 +127,8 @@ function OtherTime({ med, go }: { med: Med; go: (p: Page) => void }) {
         <input type="date" id="otherDate" value={date} onInput={e => { const v = (e.target as HTMLInputElement).value; if (v) setDate(v); }} /></div></div>}
       <div class="group-label">Time</div>
       <div class="card list"><div class="row"><label for="otherAt">{future ? 'Planned for' : 'Taken at'}</label>
-        <input type="time" id="otherAt" value={time} onInput={e => { const v = (e.target as HTMLInputElement).value; if (v) setTime(v); }} /></div></div>
+        <input type="time" id="otherAt" value={time} onInput={e => { const v = (e.target as HTMLInputElement).value; if (v) setTime(v); }} /></div>
+        {med.kind === 'XR' && <MealRow id="otherMeal" checked={meal} onChange={setMeal} />}</div>
       <p class="foot pad">{future
         ? `That's in the future, so it's saved as a planned dose for ${fmtWhen(ts, true)}. Tracking starts then.`
         : `Logged for ${fmtWhen(ts, true)}.`}{slot ? ` Counts as your ${fmtTime(slot.at)} scheduled dose.` : ''}</p>

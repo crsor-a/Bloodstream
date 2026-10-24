@@ -2,10 +2,20 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { parseBackup } from '../lib/storage';
 import { exportBackup } from '../lib/exportData';
 import {
-  deleteEverything, doses, importSnapshot, libraryOpen, logs, persisted, profile, requestPersist, setBand, setLogging, setName,
+  deleteEverything, doses, importSnapshot, libraryOpen, logs, persisted, personalizeOpen, physio, profile, requestPersist, setBand, setLogging, setName,
   settings, showToast, storeKind, tour
 } from '../state';
+import { BAND_OPTIONS } from '../model/copy';
 import { Segmented, Switch } from '../components/controls';
+
+/** One line for the entry row: what is personalized, or a nudge when nothing is. */
+function bodySummary(): string {
+  const f = physio.value.factors;
+  if (!f.length) return 'Weight, kidneys, diet and medicines. Not set, so label averages are used.';
+  const moving = f.filter(x => x.modeled).length;
+  const d = physio.value.halfLives.d;
+  return `${f.length} detail${f.length === 1 ? '' : 's'} set${moving ? `, d-amphetamine half-life about ${Math.round(d * 10) / 10} h` : ', curve unchanged'}`;
+}
 
 const PHASE_LABEL = { adjusting: 'Still adjusting', settled: 'Settled', unsure: 'Not sure' } as const;
 
@@ -57,9 +67,14 @@ export function DataCard() {
         <div class="data-row">
           <span class="row-label">Age group</span>
           <Segmented label="Age group" value={profile.value.band} onChange={b => { setBand(b); showToast('Age group updated'); }}
-            options={[{ v: 'child', label: '6 to 12' }, { v: 'teen', label: '13 to 17' }, { v: 'adult', label: '18+' }]} />
-          <p class="foot">Sets how quickly your body clears each dose, using the FDA label's half-lives for each age group.</p>
+            options={BAND_OPTIONS} />
+          <p class="foot">Sets how quickly your body clears each dose, using the FDA label's half-lives for each age group. Older adults weren't studied, so 65+ uses adult values with a wider range.</p>
         </div>
+      </div>
+      <div class="card list pz-entry">
+        <button type="button" class="list-btn" onClick={() => { personalizeOpen.value = true; }}>
+          <span>Body & medicines<small class="block">{bodySummary()}</small></span><span class="chev" aria-hidden="true" />
+        </button>
       </div>
 
       <div class="group-label">Doctor logging</div>

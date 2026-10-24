@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { openDB } from 'idb';
-import { makeBackup, openStore, parseBackup, sanitizeDose, sanitizeSettings } from '../src/lib/storage';
+import { makeBackup, openStore, parseBackup, sanitizeDose, sanitizeProfile, sanitizeSettings } from '../src/lib/storage';
+import { DEFAULT_BODY } from '../src/model/types';
 import { resolveFormTime, resolvePast } from '../src/lib/time';
 import { HOUR } from '../src/lib/time';
 
@@ -11,11 +12,12 @@ describe('storage', () => {
     expect(store.kind).toBe('indexeddb');
     const d = sanitizeDose({ kind: 'XR', mg: 20, at: 1_700_000_000_000 })!;
     await store.putDose(d);
-    await store.putProfile({ band: 'teen', name: '' });
+    await store.putProfile({ band: 'teen', name: '', body: { ...DEFAULT_BODY, weightKg: 61, renal: 'severe', ppi: true } });
     await store.putSettings(sanitizeSettings({ sleep: '22:30', seen: true }));
     const snap = await store.load();
     expect(snap.doses.map(x => x.id)).toContain(d.id);
     expect(snap.profile.band).toBe('teen');
+    expect(snap.profile.body).toMatchObject({ weightKg: 61, renal: 'severe', ppi: true, diet: 'mixed' });
     expect(snap.settings.sleep).toBe('22:30');
     await store.deleteDose(d.id);
     expect((await store.load()).doses.find(x => x.id === d.id)).toBeUndefined();
@@ -27,7 +29,7 @@ describe('storage', () => {
   });
   it('exports and re-imports a backup', () => {
     const d = sanitizeDose({ kind: 'XR', mg: 25, at: 123 })!;
-    const text = makeBackup({ doses: [d], profile: { band: 'adult', name: '' }, settings: sanitizeSettings({ sleep: '23:00', seen: true }), meds: [], schedules: [], logs: [], appointments: [] });
+    const text = makeBackup({ doses: [d], profile: { band: 'adult', name: '', body: DEFAULT_BODY }, settings: sanitizeSettings({ sleep: '23:00', seen: true }), meds: [], schedules: [], logs: [], appointments: [] });
     const back = parseBackup(text);
     expect(back.doses[0]).toMatchObject({ kind: 'XR', mg: 25, at: 123 });
     expect(() => parseBackup('{"hello":1}')).toThrow(/isn't a Bloodstream backup/);
@@ -77,5 +79,22 @@ describe('updating the app keeps saved data', () => {
     expect(db.version).toBe(2);
     expect([...db.objectStoreNames].sort()).toEqual(['appointments', 'doses', 'kv', 'logs', 'meds', 'schedules']);
     db.close();
+  });
+  it('reads 4.0 profiles without body details, and cleans bad values', () => {
+    expect(sanitizeProfile({ band: 'teen', name: 'Sam' })).toEqual({ band: 'teen', name: 'Sam', body: DEFAULT_BODY });
+    expect(sanitizeProfile({ band: 'senior' }).band).toBe('senior');
+    const p = sanitizeProfile({ band: 'adult', body: { weightKg: 9999, renal: 'awful', diet: 'plant', urine: 'alkaline', ppi: 'yes', cycle: { enabled: true, start: '2026-10-01', length: 60 } } });
+    expect(p.body.weightKg).toBeNull();
+    expect(p.body.renal).toBe('unknown');
+    expect(p.body.diet).toBe('plant');
+    expect(p.body.urine).toBe('alkaline');
+    expect(p.body.ppi).toBe(false);
+    expect(p.body.cycle).toEqual({ enabled: true, start: '2026-10-01', length: 40, hormonal: false });
+    expect(sanitizeProfile({ body: { weightKg: 72.364 } }).body.weightKg).toBe(72.36);
+  });
+  it('keeps the meal flag on doses and drops unknown values', () => {
+    expect(sanitizeDose({ kind: 'XR', mg: 20, at: 5, meal: 'highfat' })!.meal).toBe('highfat');
+    expect(sanitizeDose({ kind: 'XR', mg: 20, at: 5, meal: 'pizza' })!.meal).toBeUndefined();
+    expect('meal' in sanitizeDose({ kind: 'IR', mg: 10, at: 5 })!).toBe(false);
   });
 });

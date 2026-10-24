@@ -3,8 +3,10 @@ import { atOnDay, mostRecentTaken, startOfDay } from '../lib/calendar';
 import { DOSE_PRESETS, fmtMg, pillSVG } from '../lib/pill';
 import { fmtTime, HOUR, MIN, toHHMM } from '../lib/time';
 import { fractionRemaining, type Kind } from '../model/pk';
+import { doseParams } from '../model/physio';
 import type { PillLook } from '../model/types';
-import { addDose, doses, profile, retroDay, settings, showToast, sweepToken } from '../state';
+import { addDose, doses, physio, retroDay, settings, showToast, sweepToken } from '../state';
+import { MealRow } from './DoseForm';
 import { Segmented, Sheet } from '../components/controls';
 
 const DEFAULT_LOOK: Record<Kind, PillLook> = {
@@ -29,6 +31,7 @@ function RetroForm({ day }: { day: number }) {
   const [kind, setKind] = useState<Kind>(base?.kind ?? settings.value.last?.kind ?? 'XR');
   const [mg, setMg] = useState<number>(base?.mg ?? settings.value.last?.mg ?? 20);
   const [editing, setEditing] = useState(false);
+  const [meal, setMeal] = useState(false);
   const [time, setTime] = useState(() => {
     const usual = base ? toHHMM(base.at) : '08:00';
     return isToday && atOnDay(day, usual) > t0 ? toHHMM(t0) : usual;
@@ -38,14 +41,14 @@ function RetroForm({ day }: { day: number }) {
   const at = atOnDay(day, time);
   const now = Date.now();
   const future = at > now + MIN;
-  const stillIn = !future && fractionRemaining(kind, (now - at) / HOUR, profile.value.band) >= 0.02;
+  const stillIn = !future && fractionRemaining(kind, (now - at) / HOUR, doseParams(physio.value, kind, meal && kind === 'XR')) >= 0.02;
   const nearby = doses.value.find(d => d.kind === kind && Math.abs(d.at - at) < 45 * MIN);
   const presets: number[] = [...DOSE_PRESETS[kind]];
   if (!presets.includes(mg)) presets.push(mg);
 
   const submit = () => {
     if (future) return;
-    const d = addDose({ kind, mg, at, shape: look.shape, mode: look.mode, colors: look.colors }, { remember: false });
+    const d = addDose({ kind, mg, at, shape: look.shape, mode: look.mode, colors: look.colors, ...(meal && kind === 'XR' ? { meal: 'highfat' as const } : {}) }, { remember: false });
     retroDay.value = null;
     if (stillIn) sweepToken.value++;
     showToast(`Added ${d.kind} ${fmtMg(d.mg)} mg on ${shortDay(d.at)} at ${fmtTime(d.at)}`);
@@ -82,6 +85,7 @@ function RetroForm({ day }: { day: number }) {
           <label for="retroAt">Taken at</label>
           <input type="time" id="retroAt" value={time} onInput={e => { const v = (e.target as HTMLInputElement).value; if (v) setTime(v); }} />
         </div>
+        {kind === 'XR' && <MealRow id="retroMeal" checked={meal} onChange={setMeal} />}
       </div>
       <p class={'foot pad' + (future ? ' warn' : '')}>
         {future

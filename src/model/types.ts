@@ -22,6 +22,8 @@ export interface Dose extends PillLook {
   medId?: string;
   /** Schedule slot this dose fulfils, if any. */
   scheduleId?: string;
+  /** XR taken with a high-fat meal (label: peak about 2.5 h later, same total). */
+  meal?: 'highfat';
 }
 
 /** A saved medication ("Morning XR"): one tap to log it. */
@@ -83,7 +85,25 @@ export interface Theme {
 
 export type AdjustPhase = 'adjusting' | 'settled' | 'unsure';
 
-export interface Profile { band: Band; name: string }
+/** Optional body and medicine details that change the model (see model/physio.ts). */
+export interface Body {
+  weightKg: number | null;
+  units: 'kg' | 'lb';
+  sex: 'female' | 'male' | 'other' | null;
+  renal: 'unknown' | 'normal' | 'mild' | 'moderate' | 'severe' | 'failure';
+  diet: 'mixed' | 'plant';
+  /** Regular medicines that change urine acidity. */
+  urine: 'none' | 'alkaline' | 'acidic';
+  ppi: boolean;
+  cyp2d6: boolean;
+  serotonergic: boolean;
+  maoi: boolean;
+  liver: boolean;
+  pregnant: boolean;
+  cycle: { enabled: boolean; start: string | null; length: number; hormonal: boolean };
+}
+
+export interface Profile { band: Band; name: string; body: Body }
 
 export interface Settings {
   /** Planned bedtime, "HH:MM". */
@@ -116,4 +136,9 @@ export const DEFAULT_SETTINGS: Settings = {
   logging: { enabled: false, phase: null }, incognitoUntil: 0, theme: DEFAULT_THEME,
   reminders: { enabled: false, lead: 10, discreet: true }, skips: {}, setupV4: 'pending'
 };
-export const DEFAULT_PROFILE: Profile = { band: 'adult', name: '' };
+export const DEFAULT_BODY: Body = {
+  weightKg: null, units: 'kg', sex: null, renal: 'unknown', diet: 'mixed', urine: 'none',
+  ppi: false, cyp2d6: false, serotonergic: false, maoi: false, liver: false, pregnant: false,
+  cycle: { enabled: false, start: null, length: 28, hormonal: false }
+};
+export const DEFAULT_PROFILE: Profile = { band: 'adult', name: '', body: DEFAULT_BODY };

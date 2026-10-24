@@ -6,6 +6,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { openDB } from 'idb';
 import { makeBackup, openStore, parseBackup, sanitizeAppointment, sanitizeLog, sanitizeMed, sanitizeSchedule } from '../src/lib/storage';
+import { DEFAULT_BODY } from '../src/model/types';
 
 const V3_DOSE = { id: 'd1', kind: 'XR', mg: 20, at: 1_760_000_000_000, created: 1_760_000_000_000, shape: 'capsule', mode: 'halves', colors: { L: '#ffffff', R: '#4a8cf0' } };
 const V3_SETTINGS = { sleep: '22:15', resetAt: 0, seen: true, seenVersion: '3.3.0', last: { kind: 'XR', mg: 20, shape: 'capsule', mode: 'halves', colors: { L: '#ffffff', R: '#4a8cf0' }, shapeTouched: true } };
@@ -30,7 +31,7 @@ describe('3.x → 4.0 database upgrade', () => {
     const snap = await store.load();
     expect(snap.doses.map(d => d.id)).toEqual(['d1', 'd2']);
     expect(snap.doses[0]).toMatchObject({ kind: 'XR', mg: 20, mode: 'halves', colors: { R: '#4a8cf0' } });
-    expect(snap.profile).toEqual({ band: 'teen', name: '' });
+    expect(snap.profile).toEqual({ band: 'teen', name: '', body: DEFAULT_BODY });
     expect(snap.settings).toMatchObject({ sleep: '22:15', seen: true, seenVersion: '3.3.0', setupV4: 'pending' });
     expect(snap.settings.last?.colors.R).toBe('#4a8cf0');
     expect(snap.settings.logging.enabled).toBe(false);

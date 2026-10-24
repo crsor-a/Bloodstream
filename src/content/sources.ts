@@ -43,5 +43,14 @@ export const SRC = {
   TSA: s('TSA: Can you pack your meds in a pill case? And more questions answered', 'https://tsa.gov/travel/travel-tips/can-you-pack-your-meds-pill-case-and-more-questions-answered'),
   ED_504: s('U.S. Department of Education: Students with ADHD and Section 504, a resource guide (2016)', 'https://www.parentcenterhub.org/dear-colleague-letter-and-resource-guide-on-students-with-adhd/'),
   JAN: s('Job Accommodation Network (JAN)', 'https://askjan.org/'),
-  PREG_REG: s('National Pregnancy Registry for ADHD Medications, Massachusetts General Hospital', 'https://womensmentalhealth.org/research/pregnancyregistry/adhd-medications')
+  PREG_REG: s('National Pregnancy Registry for ADHD Medications, Massachusetts General Hospital', 'https://womensmentalhealth.org/research/pregnancyregistry/adhd-medications'),
+  XR_PPI: s('Adderall XR prescribing information, section 7.7: omeprazole study (median Tmax, AUC, Cmax)', 'https://medlibrary.org/lib/rx/meds/adderall-xr-1/page/3/'),
+  XR_PK: s('Adderall XR prescribing information, section 12.3: food effect, body weight, half-lives, kidney function', 'https://medlibrary.org/lib/rx/meds/adderall-xr/page/5/'),
+  VYVANSE: s('FDA prescribing information: Vyvanse (d-amphetamine clearance in kidney impairment and ESRD)', 'https://www.accessdata.fda.gov/drugsatfda_docs/label/2026/021977s052lbl.pdf'),
+  ANGGARD: s('Änggård et al., Pharmacokinetic and clinical studies on amphetamine dependent subjects, Eur J Clin Pharmacol (1970)', 'https://link.springer.com/article/10.1007/BF00560284'),
+  GUNNE: s('Gunne & Änggård, Pharmacokinetic studies with amphetamines, J Pharmacokinet Biopharm (1973)', 'https://link.springer.com/article/10.1007/BF01059787'),
+  PENCZYNSKI: s('Penczynski et al., Urinary potential renal acid load among vegans versus omnivores, Nutrients (2022)', 'https://mdpi-res.com/d_attachment/nutrients/nutrients-14-04468/article_deploy/nutrients-14-04468.pdf'),
+  ALLOMETRY: s('Anderson, McKee & Holford, Size, myths and the clinical pharmacokinetics of analgesia in paediatric patients, Clin Pharmacokinet (1997)', 'https://pubmed.ncbi.nlm.nih.gov/9391745/'),
+  WHITE_2002: s('White, Justice & de Wit, Differential subjective effects of d-amphetamine by gender, hormone levels and menstrual cycle phase, Pharmacol Biochem Behav (2002)', 'https://pubmed.ncbi.nlm.nih.gov/12213517/'),
+  JUSTICE_2000: s('Justice & de Wit, Acute effects of d-amphetamine during the early and late follicular phases of the menstrual cycle in women (2000)', 'https://pubmed.ncbi.nlm.nih.gov/10899363/')
 };

@@ -3,7 +3,7 @@ import { applyFade, fmtMg, pct, pillSVG } from '../lib/pill';
 import { dayWord, fmtTime, fmtWhen, rel } from '../lib/time';
 import { DIRECTION, feelPhrase } from '../model/copy';
 import {
-  doses, entering, flight, incognito, meds, now, regimen, scrollTarget, setDoseTime, settings, sheetOpen, showToast, sweepToken
+  doses, entering, flight, incognito, meds, now, personalizeOpen, physio, regimen, scrollTarget, setDoseTime, settings, sheetOpen, showToast, sweepToken
 } from '../state';
 import { prefersReducedMotion } from '../components/controls';
 import { mostRecentTaken } from '../lib/calendar';
@@ -17,6 +17,8 @@ import { DataCard } from './DataCard';
 import { CalendarCard, CalendarViewer } from './Calendar';
 import { RetroDoseSheet } from './RetroDose';
 import { ChangelogLine, ChangelogViewer } from './Changelog';
+import { PersonalizeViewer } from './Personalize';
+import { openArticle } from './Reader';
 import { AddSheet } from './AddSheet';
 import { DueCards } from './DueCards';
 import { LogSheet } from './LogSheet';
@@ -152,19 +154,32 @@ function Method() {
     <details class="method reveal" style={{ '--d': 12 } as any}>
       <summary>How Bloodstream estimates this</summary>
       <ul>
-        <li>Both forms are a 3:1 mix of d- and l-amphetamine. Each is modeled on its own, using the elimination half-lives on the FDA label for your age group. Adults: about 10 hours for d and 13 for l. Teens: 11 and 13 to 14. Kids 6 to 12: 9 and 11.</li>
+        <li>Both forms are a 3:1 mix of d- and l-amphetamine. Each is modeled on its own, using the elimination half-lives on the FDA label for your age group. Adults: about 10 hours for d and 13 for l. Teens: 11 and 13 to 14. Kids 6 to 12: 9 and 11. Adults 65 and older weren't studied, so they use adult values with a wider range.</li>
         <li>IR is modeled as a single tablet that reaches peak blood level about 3 hours after the dose.</li>
         <li>XR is modeled as two bead populations: half releases right away and the delayed half starts a few hours later and absorbs gradually. That puts the peak around 7 hours, in line with the label's note that XR 20 mg tracks closely with IR 10 mg taken twice, 4 hours apart.</li>
-        <li>Blood levels scale in proportion to dose (the label shows exposure roughly tripling from 10 mg to 30 mg), so overlapping doses are simply added together. A booster stacks on what is already there, and roughly a quarter of yesterday's dose is still in your body when the next morning's dose goes in. Doses count toward the curve for 72 hours, until about 1% remains, and stay in your history after that.</li>
+        <li>Blood levels scale in proportion to dose (the label shows exposure roughly tripling from 10 mg to 30 mg), so overlapping doses are simply added together. A booster stacks on what is already there, and with label averages roughly a quarter of yesterday's dose is still in your body when the next morning's dose goes in (more or less depending on Body & medicines). Doses count toward the curve for 72 hours, until about 1% remains, and stay in your history after that.</li>
         <li>"Left" is the share of today's load not yet eliminated, counting what you took today plus anything carried over from earlier doses.</li>
         <li>Felt effect ends well before the medication does. IR is commonly felt for about 4 to 6 hours and XR for about 8 to 12, partly because the body adapts during the day. The effect curve tapers to match those windows. Stacked effects are added too, which may overstate how strong a late booster feels.</li>
         <li>Effectivity zones split each area into seven bands. Attention, self-regulation and energy follow felt effect; appetite and physical stimulation follow blood level; sleep readiness blends both. They are rough guides, not clinical scores.</li>
-        <li>Sex has no direct effect on the label. Women showed 20 to 30% higher exposure, which the label puts down to body weight, and that changes absolute levels rather than the shape of these percentage curves.</li>
-        <li>Other things that shift a real curve: a heavy meal can push XR's peak later; acidic foods, juice and vitamin C can lower levels and speed clearance, while antacids can raise and prolong them; kidney function and other medications matter too.</li>
+        <li>Body & medicines personalizes the model where published numbers exist. Urine acidity changes the half-life by about 7 hours per pH unit, so a mostly plant-based diet (urine about half a unit less acidic) lengthens it by about 35%, and medicines that alkalinize or acidify urine are estimated more loosely. Severe kidney impairment and kidney failure use measured clearance from the labels. Weight scales concentrations and nudges the half-life by the quarter power of weight. On XR, a high-fat meal delays the peak by about 2.5 hours and a daily acid reducer (PPI) brings it forward, both with the same total amount.</li>
+        <li>Sex has no direct effect on the label: women's 20 to 30% higher exposure shrank once doses were compared per kilogram. Things without numbers (CYP2D6 inhibitors, liver disease, mild or moderate kidney impairment, age 65+, pregnancy) widen the shaded range instead of moving the curve.</li>
+        <li>The ng/mL estimate is calibrated to the XR label (20 mg peaks around 37 ng/mL of total amphetamine in healthy adults), scaled by weight, with children's 30% lower exposure per mg/kg. People vary by about 25% even with everything accounted for, and there is no established target level.</li>
         <li>Sleep interference blends estimated effect with remaining blood level. It is a rough index, not a clinical measurement.</li>
       </ul>
-      <p class="src">Sources: <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2023/021303s038lbl.pdf" target="_blank" rel="noopener">FDA label, Adderall XR</a> · <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/011522s042lbl.pdf" target="_blank" rel="noopener">FDA label, Adderall tablets</a> · <a href="https://medlibrary.org/lib/rx/meds/amphetamine/page/6/" target="_blank" rel="noopener">Amphetamine label, sex and weight</a></p>
+      <p class="src">Sources: <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2023/021303s038lbl.pdf" target="_blank" rel="noopener">FDA label, Adderall XR</a> · <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/011522s042lbl.pdf" target="_blank" rel="noopener">FDA label, Adderall tablets</a> · <a href="https://medlibrary.org/lib/rx/meds/amphetamine/page/6/" target="_blank" rel="noopener">Amphetamine label, sex and weight</a> · <a href="https://medlibrary.org/lib/rx/meds/adderall-xr/page/5/" target="_blank" rel="noopener">XR label 12.3</a> · <a href="https://link.springer.com/article/10.1007/BF01059787" target="_blank" rel="noopener">Gunne &amp; Änggård 1973</a> · <a href="https://mdpi-res.com/d_attachment/nutrients/nutrients-14-04468/article_deploy/nutrients-14-04468.pdf" target="_blank" rel="noopener">Penczynski 2022</a>. More in <button type="button" class="u-link" onClick={() => openArticle('curve-factors')}>What shapes your curve</button>.</p>
     </details>
+  );
+}
+
+/** Shown while an MAOI is marked in Body & medicines (label: contraindicated within 14 days). */
+function MaoiCard() {
+  if (!physio.value.safety.maoi) return null;
+  return (
+    <div class="callout urgent dash-callout" role="alert">
+      <b>MAOI marked in Body & medicines</b>
+      <p>Amphetamine must not be taken with an MAOI or within 14 days of stopping one, because blood pressure can rise dangerously. Contact your prescriber before your next dose. Severe headache, chest pain or confusion needs emergency care.{' '}
+        <button type="button" class="u-link" onClick={() => { personalizeOpen.value = true; }}>Review</button></p>
+    </div>
   );
 }
 
@@ -207,6 +222,7 @@ export function Dashboard() {
       {inc ? <><Greeting /><IncognitoView /></> : <>
         <UpgradeCard />
         <Greeting />
+        <MaoiCard />
         <DueCards />
         {idle ? <IdleHero /> : <Hero />}
         <AppointmentBanner />
@@ -227,6 +243,7 @@ export function Dashboard() {
         <LogSheet />
         <Library />
         <AppointmentSheet />
+        <PersonalizeViewer />
         <Reader />
         <ChangelogViewer />
         <LoggingTour />

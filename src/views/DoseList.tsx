@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks';
 import { pct, pillSVG } from '../lib/pill';
 import { fmtWhen, MIN, resolvePast, toHHMM } from '../lib/time';
-import { now, regimen, removeDose, setDoseTime, sheetOpen, showToast, sweepToken } from '../state';
+import { now, regimen, removeDose, setDoseMeal, setDoseTime, sheetOpen, showToast, sweepToken } from '../state';
+import { MealRow } from './DoseForm';
 import type { Dose } from '../model/types';
 import { doseTitle } from '../lib/names';
 
@@ -32,7 +33,7 @@ function Row(p: { d: Dose; open: boolean; onToggle: () => void; carried: boolean
         <div class="mini-pill" dangerouslySetInnerHTML={{ __html: pillSVG(d, { glow: false }) }} />
         <div class="dose-info">
           <b>{doseTitle(d)}{p.carried ? <span class="tag">Carry-over</span> : planned ? <span class="tag">Planned</span> : d.scheduleId ? <span class="tag">Scheduled</span> : null}</b>
-          <span class="sub">{planned ? `Planned · ${fmtWhen(d.at, false, t)} · not taken yet` : `${fmtWhen(d.at, false, t)} · ${pct(reg.doseRemaining(d, t))} left`}</span>
+          <span class="sub">{planned ? `Planned · ${fmtWhen(d.at, false, t)}${d.meal ? ' · with a meal' : ''} · not taken yet` : `${fmtWhen(d.at, false, t)}${d.meal ? ' · with a meal' : ''} · ${pct(reg.doseRemaining(d, t))} left`}</span>
         </div>
         <button type="button" class="pill-btn" aria-expanded={p.open} onClick={() => { setArmed(false); setValue(toHHMM(planned ? Date.now() : d.at)); p.onToggle(); }}>{p.open ? 'Done' : 'Edit'}</button>
       </div>
@@ -46,6 +47,9 @@ function Row(p: { d: Dose; open: boolean; onToggle: () => void; carried: boolean
             </div>
           </div>
           <p class="foot" style={{ margin: 0 }}>{changed ? `Will be logged as ${fmtWhen(target, true)}. Only times that have already happened can be saved.` : 'No change yet.'}</p>
+          {d.kind === 'XR' && <div class="card list edit-meal"><MealRow id={'meal-' + d.id} checked={d.meal === 'highfat'} onChange={v => {
+            setDoseMeal(d.id, v); showToast(v ? 'Marked as taken with a high-fat meal' : 'Meal removed from this dose');
+          }} /></div>}
           <div class="edit-actions">
             <button type="button" class="btn-text danger" onClick={remove}>{armed ? 'Tap again to remove' : 'Remove dose'}</button>
             <button type="button" class="btn primary sm" disabled={!changed} style={changed ? undefined : { opacity: 0.4 }} onClick={save}>Save time</button>

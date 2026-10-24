@@ -14,9 +14,20 @@ export type ChangeType = 'new' | 'improved' | 'fixed';
 export interface Change { type: ChangeType; text: string }
 export interface Release { version: string; date: string; title: string; changes: Change[] }
 
-export const APP_VERSION = '4.0.0';
+export const APP_VERSION = '4.1.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '4.1.0', date: '2026-10-24', title: 'A curve that fits you',
+    changes: [
+      { type: 'new', text: 'Body & medicines: optional weight, kidney function, diet, regular medicines and health details that personalize how fast each dose is absorbed and cleared. Only effects with published numbers move the curve, and each one is tagged with where its numbers come from.' },
+      { type: 'new', text: 'Your curve now shows a shaded typical range, and an estimate of amphetamine in your blood in ng/mL, calibrated to the Adderall XR label and your weight.' },
+      { type: 'new', text: 'Mark an XR dose as taken with a high-fat meal, when you log it or later with Edit. Its peak moves about 2.5 hours later, as on the label.' },
+      { type: 'new', text: 'A 65+ age group, an optional weight step in setup, and an optional cycle phase note that is shown for information only.' },
+      { type: 'new', text: 'New article: What shapes your curve. Safety notes for MAOIs and serotonergic medicines when you mark them.' },
+      { type: 'improved', text: 'Carry-over into the next day now follows your own clearance instead of a fixed estimate. Your history and settings are untouched.' }
+    ]
+  },
   {
     version: '4.0.0', date: '2026-10-22', title: 'Bloodstream 4',
     changes: [

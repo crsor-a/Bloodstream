@@ -26,6 +26,16 @@ export function initialDraft(): DraftInit {
   };
 }
 
+/** XR only: a high-fat meal delays absorption (label: Tmax +2.5 h, same total amount). */
+export function MealRow({ id, checked, onChange }: { id: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div class="row">
+      <div class="row-text"><label for={id}>With a high-fat meal</label><small>XR peaks about 2.5 hours later, with the same total amount</small></div>
+      <Switch id={id} checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
 /** One-off dose: any strength, any time, optionally saved as a medication for one-tap logging. */
 export function DoseForm(p: { onSubmit: (r: FormResult) => void; submitLabel?: string; offerSave?: boolean }) {
   const init = useMemo(initialDraft, []);
@@ -34,6 +44,7 @@ export function DoseForm(p: { onSubmit: (r: FormResult) => void; submitLabel?: s
   const [time, setTime] = useState(() => toHHMM(new Date()));
   const [save, setSave] = useState(false);
   const [name, setName] = useState('');
+  const [meal, setMeal] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const at = resolveFormTime(time, planned, now.value);
@@ -50,7 +61,7 @@ export function DoseForm(p: { onSubmit: (r: FormResult) => void; submitLabel?: s
   else if (dayDiff(at) !== 0) dayNote = `That time hasn't happened yet today, so it's logged as yesterday at ${fmtTime(at)}. Turn on Not taken yet to plan ahead instead.`;
 
   const submit = () => p.onSubmit({
-    dose: { kind: draft.kind, mg: draft.mg, at, ...draft.look },
+    dose: { kind: draft.kind, mg: draft.mg, at, ...draft.look, ...(meal && draft.kind === 'XR' ? { meal: 'highfat' as const } : {}) },
     shapeTouched: draft.shapeTouched, previewEl: previewRef.current, look: draft.look,
     saveAs: save ? (name.trim() || `${draft.kind} ${fmtMg(draft.mg)} mg`) : null
   });
@@ -74,6 +85,7 @@ export function DoseForm(p: { onSubmit: (r: FormResult) => void; submitLabel?: s
             <input type="time" id="takenAt" value={time} onInput={e => { const v = (e.target as HTMLInputElement).value; if (v) setTime(v); }} />
           </div>
         </div>
+        {draft.kind === 'XR' && <MealRow id="mealSw" checked={meal} onChange={setMeal} />}
       </div>
       {dayNote && <p class="foot pad">{dayNote}</p>}
 

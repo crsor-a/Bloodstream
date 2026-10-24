@@ -1,3 +1,4 @@
+import type { Band } from './pk';
 import type { Phase } from './regimen';
 
 export const PHASES: Record<Phase, [string, string]> = {
@@ -204,3 +205,8 @@ export function rhythmWord(e: number, rising: boolean): string {
 }
 
 export const DISCLAIMER = 'Bloodstream is made only for Adderall (mixed amphetamine salts, IR and XR) and its generic versions, for people keeping track of their ADHD treatment. Its curves, zones and articles are estimates built from published averages, not measurements of your body, and they can be wrong. It doesn\'t replace your doctor or pharmacist: check anything important with them, and never use Bloodstream to plan or change doses your prescriber hasn\'t approved.';
+
+/** Age groups. 65+ uses adult label values (older adults were not studied) with a wider range. */
+export const BAND_OPTIONS: { v: Band; label: string }[] = [
+  { v: 'child', label: '6–12' }, { v: 'teen', label: '13–17' }, { v: 'adult', label: '18–64' }, { v: 'senior', label: '65+' }
+];

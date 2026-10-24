@@ -4,7 +4,8 @@ import { fmtWhen, HOUR, occurrenceNear, toHHMM } from '../lib/time';
 import { AREA_IDS, EFFECT_GROUPS, PHASES } from '../model/copy';
 import { ctxAt, areaValue } from '../lib/area';
 import { zoneFor, zoneColors, ZONE_EDGES, type ZoneKind } from '../lib/zones';
-import { now, regimen } from '../state';
+import { now, profile, regimen } from '../state';
+import { cyclePhase } from '../model/physio';
 import { Segmented } from '../components/controls';
 import { openArticle } from './Reader';
 
@@ -28,6 +29,14 @@ function ZoneBar({ kind, v }: { kind: ZoneKind; v: number }) {
       <i class="zbar-knob" style={{ left: (v * 100).toFixed(2) + '%', background: zoneFor(kind, v).color }} />
     </div>
   );
+}
+
+/** Information only: the evidence on cycle phase is small and mixed, so zones are not adjusted. */
+function CycleNote() {
+  const c = cyclePhase(profile.value.body, now.value);
+  if (!c) return null;
+  const name = c.phase === 'luteal' ? 'luteal phase' : c.phase === 'menstrual' ? 'period (early follicular phase)' : 'follicular phase';
+  return <p class="foot pad cycle-note">Cycle day {c.day}, {name}. In small lab studies of healthy women, some effects of d-amphetamine were stronger in the follicular phase than the luteal phase. That wasn't studied in ADHD treatment, so zones aren't adjusted.</p>;
 }
 
 export function Effectivity() {
@@ -77,6 +86,7 @@ export function Effectivity() {
           </div>
         </div>
       ))}
+      <CycleNote />
       <p class="foot pad">Seven zones run from red at your unmedicated baseline to green at full effect. Appetite suppression and physical stimulation run the other way, so green always means the settled side. Tap any area for an article that adapts to where you are right now.</p>
     </section>
   );

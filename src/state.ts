@@ -1,11 +1,12 @@
 import { batch, computed, signal } from '@preact/signals';
 import { Regimen } from './model/regimen';
+import { physioFor } from './model/physio';
 import type { Band } from './model/pk';
 import {
-  DEFAULT_PROFILE, DEFAULT_SETTINGS,
-  type AdjustPhase, type Appointment, type Dose, type LogEntry, type Med, type PillLook, type Profile, type Schedule, type Settings, type Theme
+  DEFAULT_BODY, DEFAULT_PROFILE, DEFAULT_SETTINGS,
+  type AdjustPhase, type Appointment, type Body, type Dose, type LogEntry, type Med, type PillLook, type Profile, type Schedule, type Settings, type Theme
 } from './model/types';
-import { migrateLegacy, newId, openStore, type Coll, type CollItem, type Snapshot, type Store } from './lib/storage';
+import { migrateLegacy, newId, openStore, sanitizeBody, type Coll, type CollItem, type Snapshot, type Store } from './lib/storage';
 import { attentionSlots, pruneSkips, type Slot } from './model/schedule';
 import { APP_VERSION } from './changelog';
 
@@ -23,7 +24,9 @@ export const persisted = signal<boolean | null>(null);
 export const view = signal<'loading' | 'onboard' | 'dash'>('loading');
 export const dbBlocked = signal(false);
 
-export const regimen = computed(() => new Regimen(doses.value, profile.value.band, now.value));
+/** Personal physiology (weight, kidneys, urine pH, medicines) turned into model parameters. */
+export const physio = computed(() => physioFor(profile.value));
+export const regimen = computed(() => new Regimen(doses.value, physio.value, now.value));
 /** Incognito hides anything that could reveal a condition or medication. */
 export const incognito = computed(() => { const u = settings.value.incognitoUntil; return u === -1 || u > now.value; });
 export const attention = computed(() => attentionSlots(now.value, schedules.value, meds.value, doses.value, settings.value.skips, settings.value.reminders.lead));
@@ -52,6 +55,8 @@ export const apptSheet = signal<null | { id: string | null }>(null);
 export interface ReaderState { id: string; entryId?: string; back?: { id: string; entryId?: string }[] }
 export const reader = signal<ReaderState | null>(null);
 export const changelogOpen = signal(false);
+/** Full-screen "Body & medicines" personalization viewer. */
+export const personalizeOpen = signal(false);
 export const incognitoSheet = signal(false);
 /** Feature tours layered over the dashboard. */
 export const tour = signal<null | 'upgrade' | 'logging'>(null);
@@ -142,6 +147,7 @@ export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: bool
   const d: Dose = { ...input, id: newId(), created: Date.now(), colors: { L: input.colors.L, R: input.mode === 'whole' ? input.colors.L : input.colors.R } };
   if (!d.medId) delete d.medId;
   if (!d.scheduleId) delete d.scheduleId;
+  if (d.meal !== 'highfat' || d.kind !== 'XR') delete d.meal;
   batch(() => {
     setDoses([...doses.value, d]);
     saveSettings({ ...settings.value, seen: true, last: opts.remember === false ? settings.value.last : { kind: d.kind, mg: d.mg, shape: d.shape, mode: d.mode, colors: { ...input.colors }, shapeTouched: !!opts.shapeTouched } });
@@ -153,8 +159,16 @@ export function addDose(input: NewDose, opts: { band?: Band; shapeTouched?: bool
   return d;
 }
 /** Logs a saved medication, optionally fulfilling a schedule slot. */
-export function takeMed(med: Med, at = Date.now(), scheduleId?: string): Dose {
-  return addDose({ kind: med.kind, mg: med.mg, at, shape: med.shape, mode: med.mode, colors: med.colors, medId: med.id, scheduleId }, { remember: false });
+export function takeMed(med: Med, at = Date.now(), scheduleId?: string, meal = false): Dose {
+  return addDose({ kind: med.kind, mg: med.mg, at, shape: med.shape, mode: med.mode, colors: med.colors, medId: med.id, scheduleId, ...(meal && med.kind === 'XR' ? { meal: 'highfat' as const } : {}) }, { remember: false });
+}
+/** Marks whether an XR dose was taken with a high-fat meal (changes its absorption timing). */
+export function setDoseMeal(id: string, meal: boolean) {
+  const d = doses.value.find(x => x.id === id); if (!d) return;
+  const next: Dose = { ...d };
+  if (meal && d.kind === 'XR') next.meal = 'highfat'; else delete next.meal;
+  batch(() => { setDoses(doses.value.map(x => x.id === id ? next : x)); now.value = Date.now(); });
+  store.putDose(next);
 }
 export function setDoseTime(id: string, at: number) {
   const d = doses.value.find(x => x.id === id); if (!d) return;
@@ -220,6 +234,12 @@ export function setBand(band: Band) {
   profile.value = { ...profile.value, band };
   store.putProfile(profile.value);
 }
+/** Updates body and medicine details (all optional; see model/physio.ts). */
+export function setBody(patch: Partial<Body>) {
+  const b = profile.value.body;
+  profile.value = { ...profile.value, body: sanitizeBody({ ...b, ...patch, cycle: { ...b.cycle, ...(patch.cycle ?? {}) } }) };
+  store.putProfile(profile.value);
+}
 export function setName(name: string) {
   const clean = name.replace(/\s+/g, ' ').trim().slice(0, 30);
   if (clean === profile.value.name) return;
@@ -258,7 +278,9 @@ export async function importSnapshot(snap: Snapshot): Promise<number> {
       doses: merge(doses.value, snap.doses).sort((a, b) => a.at - b.at),
       meds: merge(meds.value, snap.meds), schedules: merge(schedules.value, snap.schedules),
       logs: merge(logs.value, snap.logs), appointments: merge(appointments.value, snap.appointments),
-      profile: { ...snap.profile, name: snap.profile.name || profile.value.name },
+      // Older backups have no body details; keep what's on this device in that case.
+      profile: { ...snap.profile, name: snap.profile.name || profile.value.name,
+        body: JSON.stringify(snap.profile.body) === JSON.stringify(DEFAULT_BODY) ? profile.value.body : snap.profile.body },
       settings: { ...snap.settings, seen: true, resetAt: 0, seenVersion: settings.value.seenVersion, incognitoUntil: 0 }
     });
     store.putProfile(profile.value);

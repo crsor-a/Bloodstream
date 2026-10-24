@@ -13,7 +13,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { isBand, isKind } from '../model/pk';
 import {
   DEFAULT_PROFILE, DEFAULT_SETTINGS, DEFAULT_THEME, EFFECTS, isShape,
-  type Appointment, type Dose, type LogEntry, type LogType, type Med, type Profile, type Schedule, type Settings, type Theme
+  type Appointment, type Body, type Dose, type LogEntry, type LogType, type Med, type Profile, type Schedule, type Settings, type Theme
 } from '../model/types';
 
 export const DB_VERSION = 2;
@@ -75,6 +75,7 @@ export function sanitizeDose(raw: any): Dose | null {
   };
   if (typeof raw.medId === 'string' && raw.medId) d.medId = raw.medId;
   if (typeof raw.scheduleId === 'string' && raw.scheduleId) d.scheduleId = raw.scheduleId;
+  if (raw.meal === 'highfat') d.meal = 'highfat';
   return d;
 }
 export function sanitizeMed(raw: any): Med | null {
@@ -113,8 +114,31 @@ export function sanitizeAppointment(raw: any): Appointment | null {
     created: Number(raw.created) > 0 ? Number(raw.created) : Date.now()
   };
 }
+const oneOf = <T extends string>(v: unknown, opts: readonly T[], d: T): T => (opts.includes(v as T) ? (v as T) : d);
+const bool = (v: unknown) => v === true;
+export function sanitizeBody(raw: any): Body {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const w = Number(r.weightKg);
+  const c = r.cycle && typeof r.cycle === 'object' ? r.cycle : {};
+  const start = typeof c.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.start) ? c.start : null;
+  return {
+    weightKg: r.weightKg != null && Number.isFinite(w) && w >= 15 && w <= 250 ? Math.round(w * 100) / 100 : null,
+    units: oneOf(r.units, ['kg', 'lb'] as const, 'kg'),
+    sex: r.sex === 'female' || r.sex === 'male' || r.sex === 'other' ? r.sex : null,
+    renal: oneOf(r.renal, ['unknown', 'normal', 'mild', 'moderate', 'severe', 'failure'] as const, 'unknown'),
+    diet: oneOf(r.diet, ['mixed', 'plant'] as const, 'mixed'),
+    urine: oneOf(r.urine, ['none', 'alkaline', 'acidic'] as const, 'none'),
+    ppi: bool(r.ppi), cyp2d6: bool(r.cyp2d6), serotonergic: bool(r.serotonergic), maoi: bool(r.maoi),
+    liver: bool(r.liver), pregnant: bool(r.pregnant),
+    cycle: {
+      enabled: bool(c.enabled), start,
+      length: Number.isFinite(Number(c.length)) ? Math.min(40, Math.max(21, Math.round(Number(c.length)))) : 28,
+      hormonal: bool(c.hormonal)
+    }
+  };
+}
 export function sanitizeProfile(raw: any): Profile {
-  return { band: isBand(raw?.band) ? raw.band : DEFAULT_PROFILE.band, name: str(raw?.name, 30).trim() };
+  return { band: isBand(raw?.band) ? raw.band : DEFAULT_PROFILE.band, name: str(raw?.name, 30).trim(), body: sanitizeBody(raw?.body) };
 }
 function sanitizeTheme(raw: any): Theme {
   const t: Theme = { ...DEFAULT_THEME, colors: [...DEFAULT_THEME.colors] };

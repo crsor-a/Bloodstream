@@ -6,8 +6,10 @@ import { fmtWhen, greeting, HOUR, resolveFormTime, toHHMM } from '../lib/time';
 import { WEEKDAY_SHORT } from '../model/schedule';
 import { effect, level } from '../model/pk';
 import {
-  entering, flight, patchSettings, saveMed, saveSchedule, setBand, setLogging, setName, setReminders, settings, takeMed, view
+  entering, flight, patchSettings, saveMed, saveSchedule, setBand, setBody, setLogging, setName, setReminders, settings, takeMed, view
 } from '../state';
+import { BAND_OPTIONS } from '../model/copy';
+import { defaultUnits, parseWeight, type WeightUnits } from '../lib/units';
 import { prefersReducedMotion, Segmented, Switch } from '../components/controls';
 import { AppearanceRows, KindDoseRows, PillPreview, useMedDraft } from '../components/PillEditor';
 import { ZoneScale } from '../components/Visuals';
@@ -45,6 +47,10 @@ export function Onboarding() {
   // Everything is held here and only saved at the end, so backing out leaves no half-finished setup.
   const [name, setNameV] = useState('');
   const [band, setBandV] = useState<Band>('adult');
+  const [weight, setWeight] = useState('');
+  const [units, setUnits] = useState<WeightUnits>(defaultUnits);
+  const kg = parseWeight(weight, units);
+  const badWeight = Number.isNaN(kg);
   const init = useMemo(initialDraft, []);
   const draft = useMedDraft(init);
   const [medName, setMedName] = useState('');
@@ -69,6 +75,7 @@ export function Onboarding() {
 
   const finish = () => {
     setName(name); setBand(band);
+    setBody({ units, ...(kg != null && !badWeight ? { weightKg: kg } : {}) });
     const med = saveMed({ name: label, kind: draft.kind, mg: draft.mg, ...draft.look });
     if (wantSchedule && days.length) {
       saveSchedule({ medId: med.id, time, days, reminder: true });
@@ -144,9 +151,18 @@ export function Onboarding() {
           <div class="card"><input class="text-input wide field" type="text" maxLength={30} autoComplete="given-name" placeholder="What should Bloodstream call you?" value={name} onInput={e => setNameV((e.target as HTMLInputElement).value)} aria-label="Name" /></div>
           <p class="foot pad">Used for the greeting at the top of your dashboard, which changes through the day{name.trim() ? `, like "Good evening, ${name.trim()}."` : '.'}</p>
           <div class="group-label">Age group</div>
-          <Segmented label="Age group" value={band} onChange={setBandV} options={[{ v: 'child', label: '6 to 12' }, { v: 'teen', label: '13 to 17' }, { v: 'adult', label: '18+' }]} />
-          <p class="foot pad">Sets how quickly your body clears each dose, from the half-lives on the FDA label.</p>
-          <Foot />
+          <Segmented label="Age group" value={band} onChange={setBandV} options={BAND_OPTIONS} />
+          <p class="foot pad">Sets how quickly your body clears each dose, from the half-lives on the FDA label.{band === 'senior' ? ' Older adults weren\'t studied, so 65+ uses adult values with a wider range.' : ''}</p>
+          <div class="group-label">Weight <span class="opt">optional</span></div>
+          <div class="card list"><div class="row">
+            <input class="text-input wide field ob-weight" type="text" inputMode="decimal" placeholder={units === 'lb' ? 'e.g. 160' : 'e.g. 72'} value={weight}
+              onInput={e => setWeight((e.target as HTMLInputElement).value)} aria-label={`Weight in ${units}`} />
+            <div class="pz-units"><Segmented label="Weight units" value={units} onChange={setUnits} options={[{ v: 'kg', label: 'kg' }, { v: 'lb', label: 'lb' }]} /></div>
+          </div></div>
+          <p class={'foot pad' + (badWeight ? ' warn' : '')}>{badWeight
+            ? (units === 'lb' ? 'Enter a weight between 33 and 550 lb, or leave it empty.' : 'Enter a weight between 15 and 250 kg, or leave it empty.')
+            : 'Weight is the main reason levels differ between people. It fine-tunes clearance and the ng/mL estimate. Kidney function, diet and other medicines can be added later under Body & medicines.'}</p>
+          <Foot disabled={badWeight} />
         </>}
 
         {page === 3 && <>

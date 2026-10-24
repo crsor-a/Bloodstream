@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { apptSheet, calendarOpen, changelogOpen, incognitoSheet, libraryOpen, logSheet, reader, retroDay, sheetOpen, toast, tour } from '../state';
+import { apptSheet, calendarOpen, changelogOpen, incognitoSheet, libraryOpen, logSheet, personalizeOpen, reader, retroDay, sheetOpen, toast, tour } from '../state';
 
 export interface SegOption<T extends string> { v: T; label: ComponentChildren; sub?: string }
 
@@ -100,6 +100,7 @@ export function useEscape() {
       else if (tour.value) tour.value = null;
       else if (libraryOpen.value) libraryOpen.value = null;
       else if (changelogOpen.value) changelogOpen.value = false;
+      else if (personalizeOpen.value) personalizeOpen.value = false;
       else if (calendarOpen.value) calendarOpen.value = null;
     };
     document.addEventListener('keydown', h);
